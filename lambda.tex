@@ -1,0 +1,32 @@
+\documentclass[cs4size,a4paper,adobefonts]{ctexart}
+\usepackage{amsmath,amsthm,amssymb}
+\usepackage[colorlinks=true,allcolors=black]{hyperref}
+\usepackage{indentfirst}
+\usepackage[a4paper,left=2.5cm,right=2.5cm,bottom=2.5cm,top=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{url}
+\usepackage{fontspec}
+\setmainfont{Palatino}
+\setmonofont[Scale=MatchLowercase]{Monaco}
+\pagestyle{plain}
+\punctstyle{kaiming}
+\usepackage{unicode-math}
+\setmathfont{Asana Math}
+\graphicspath{{pic/}}
+
+\begin{document}
+\title{{\bfseries 让我们谈谈 $\lambda$}}
+\author{\href{mailto:txyyss@gmail.com}{王盛颐}}
+\date{}
+\maketitle
+
+\section{一点历史}
+
+函数是数学中一个非常基本的概念，出现在几乎所有的数学分支里。为了研究函数的一般性质，美国数学家 Alonzo Church 在 1936 年发明了 $lambda$ 演算这样一个形式系统，并以它为工具解决了 David Hilbert 在 1928 年提出的判定性问题 (Hilbert's Entscheidungsproblem)，这比图灵用他的图灵机解决同一问题还早几个月。后来证明 $lambda$ 演算和图灵机是等价的。现在谈到可计算理论的时候，通常还是拿图灵机来作模型，不怎么提 $lambda$ 演算。从这段历史可以知道，$lambda$ 演算被发明出来的时候，没有计算机，更没有程序设计语言。
+
+但好东西到底是好东西，又过了差不多 30 年（谢天谢地那时候已经有计算机和程序语言了），英国计算机科学家 Peter Landin 发现可以通过把复杂的程序语言转化成简单的 $lambda$ 演算，来理解程序语言的行为。这个洞见加上众所周知的 John McCarthy 的 Lisp 语言，让 $lambda$ 演算广为传播。现在不论是各种实际的程序设计语言还是理论上的研究工作，$lambda$ 演算都是一个绕不过去的基本工具，而图灵机也就是在证明可计算性之类的时候用到了。这让我觉得历史到底是公平的，没道理这么漂亮的理论会输给丑陋的图灵机。
+
+$lambda$ 演算之所以这么重要，用 Benjamin C. Pierce 的话说在于它具有某种“二象性”：它既可以被看作一种简单的程序设计语言，用于描述计算过程，也可以被看作一个数学对象，用于推导证明一些命题。所以在这篇介绍 $lambda$ 演算的文章里，我也打算从两个方面来讲，先讲它作为数学理论这方面的内容。
+
+\end{document}
