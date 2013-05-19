@@ -94,12 +94,12 @@ lgh (Var _) = 1
 lgh (App x y) = lgh x + lgh y
 lgh (Abs _ y) = 1 + lgh y
 
-occurs :: Term -> Term -> Bool
-p `occurs` q
+occur :: Term -> Term -> Bool
+p `occur` q
   | p == q = True
   | otherwise = helper p q
-  where helper m (App x y) = (m `occurs` x) || (m `occurs` y)
-        helper m (Abs x y) = (m == Var x) || (m `occurs` y)
+  where helper m (App x y) = (m `occur` x) || (m `occur` y)
+        helper m (Abs x y) = (m == Var x) || (m `occur` y)
         helper _ _ = False
 
 freeVars :: Term -> [Ide]
@@ -123,10 +123,22 @@ subst n x m@(Abs y p)
   where freeP = freeVars p
         freeN = freeVars n
         freeNP = union freeP freeN
-        z = head $ filter (`notElem` freeNP) allWords
+        z = genNewIde freeNP
+
+genNewIde :: [Ide] -> Ide
+genNewIde ids = head $ filter (`notElem` ids) allWords
 
 allWords :: [String]
 allWords = concat $ iterate addPrefix initVars
   where addPrefix s = [a:b | a <- alphabet, b<-s]
         initVars = map (\x->[x]) alphabet
         alphabet = ['a'..'z']
+
+alphaCongruent :: Term -> Term -> Bool
+alphaCongruent (Var x) (Var y) = x == y
+alphaCongruent (App x1 y1) (App x2 y2) = (alphaCongruent x1 x2) && (alphaCongruent y1 y2)
+alphaCongruent (Abs x tx) (Abs y ty)
+  | x == y = alphaCongruent tx ty
+  | otherwise = alphaCongruent (subst (Var z) x tx) (subst (Var z) y ty)
+  where z = genNewIde $ (freeVars tx) `union` (freeVars ty)
+
