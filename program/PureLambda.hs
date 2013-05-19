@@ -4,7 +4,7 @@ import Text.Parsec
 import qualified Text.Parsec.Token as T
 import Text.Parsec.Language (emptyDef)
 import Text.Parsec.String (Parser)
-import Data.Functor.Identity
+import Data.List (union, delete)
 
 type Ide = String
 data Term = Var Ide | App Term Term | Abs Ide Term deriving Eq
@@ -14,11 +14,8 @@ absHead = "\\"
 appOpr = " "
 
 -- Grammar is:
-
 -- var = letter, { letter | digit | "_" };
-
 -- term = chain_term, {chain_term};
-
 -- chain_term = var
 --           | "(", term, ")"
 --           | "\", var, ".", term;
@@ -73,6 +70,11 @@ parseFull p = helper . runParser p () ""
                                print err
         helper (Right x)  = putStrLn $ fullForm x
 
+parseLambda :: String -> Term
+parseLambda = helper . runParser lambdaParser () ""
+  where helper (Left err) = error $ show err
+        helper (Right x) = x
+
 instance Show Term where
   show (Var x) = x
   show (Abs x (Var y)) = absHead ++ x ++ absOpr ++ y
@@ -84,6 +86,8 @@ instance Show Term where
           helper2 (Var a) = a
           helper2 a@(Abs _ _) = show a
           helper2 a = "(" ++ show a ++ ")"
+
+-- Theory part
 
 lgh :: Term -> Int
 lgh (Var _) = 1
@@ -98,3 +102,31 @@ p `occurs` q
         helper m (Abs x y) = (m == Var x) || (m `occurs` y)
         helper _ _ = False
 
+freeVars :: Term -> [Ide]
+freeVars (Var x) = [x]
+freeVars (App t1 t2) = union (freeVars t1) (freeVars t2)
+freeVars (Abs x t) = delete x $ freeVars t
+
+isClosed :: Term -> Bool
+isClosed x = freeVars x == []
+
+subst :: Term -> Ide -> Term -> Term
+subst n x m@(Var y)
+  | x == y = n
+  | otherwise = m
+subst n x (App p q) = App (subst n x p) (subst n x q)
+subst n x m@(Abs y p)
+  | x == y = m
+  | x `notElem` freeP = m
+  | y `notElem` freeN = Abs y (subst n x p)
+  | otherwise = Abs z $ subst n x $ subst (Var z) y p
+  where freeP = freeVars p
+        freeN = freeVars n
+        freeNP = union freeP freeN
+        z = head $ filter (`notElem` freeNP) allWords
+
+allWords :: [String]
+allWords = concat $ iterate addPrefix initVars
+  where addPrefix s = [a:b | a <- alphabet, b<-s]
+        initVars = map (\x->[x]) alphabet
+        alphabet = ['a'..'z']
