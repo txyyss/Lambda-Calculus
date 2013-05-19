@@ -4,16 +4,27 @@ import Text.Parsec
 import qualified Text.Parsec.Token as T
 import Text.Parsec.Language (emptyDef)
 import Text.Parsec.String (Parser)
+import Data.Functor.Identity
 
 type Ide = String
-data Term = Var Ide | App Term Term | Abs Ide Term deriving (Eq, Show)
+data Term = Var Ide | App Term Term | Abs Ide Term deriving Eq
 
 absOpr = "."
 absHead = "\\"
 appOpr = " "
 
--- Lexer
+-- Grammar is:
 
+-- var = letter, { letter | digit | "_" };
+
+-- term = chain_term, {chain_term};
+
+-- chain_term = var
+--           | "(", term, ")"
+--           | "\", var, ".", term;
+
+
+-- Lexer
 lexer :: T.TokenParser ()
 lexer = T.makeTokenParser emptyDef
 
@@ -23,49 +34,56 @@ symbol     = T.symbol lexer
 parens     = T.parens lexer
 identifier = T.identifier lexer
 
-composeTerms :: [Term] -> Term -> Term
-composeTerms [] x = x
-composeTerms ls x = App (foldl1 App ls) x
-
+-- Parser
 varParser :: Parser Term
 varParser = do
   var <- identifier;
   return $ Var var
 
 termParser :: Parser Term
-termParser = try
-             (do
-                 heads <- many (lexeme chainTermParser)
-                 lambdaExpr <- lexeme lambdaTermParser
-                 return $ composeTerms heads lambdaExpr)
-             <|>
-             (do
-                 heads <- many1 (lexeme chainTermParser)
-                 -- tails <- lexeme lambdaTermParser
-                 return $ composeTerms (init heads) (last heads))
+termParser = do
+  ls <- many1 chainTermParser
+  return $ foldl1 App ls
 
 chainTermParser :: Parser Term
-chainTermParser = varParser <|> (parens termParser)
+chainTermParser = varParser <|> (parens termParser) <|>
+                  do
+                    lexeme $ symbol "\\"
+                    m <- lexeme identifier
+                    lexeme $ symbol "."
+                    t <- lexeme termParser
+                    return $ Abs m t
 
-lambdaTermParser :: Parser Term
-lambdaTermParser = 
-  do
-    lexeme $ symbol "\\"
-    m <- lexeme identifier
-    lexeme $ symbol "."
-    t <- lexeme termParser
-    return $ Abs m t
+lambdaParser :: Parser Term
+lambdaParser = do
+  whiteSpace
+  termParser
 
--- instance Show Term where
---   show (Var x) = x
---   show (Abs x (Var y)) = absHead ++ x ++ absOpr ++ y
---   show (Abs x y) = absHead ++ x ++ absOpr ++ show y
---   show (App x y) = helper1 x ++ appOpr ++ helper2 y
---     where helper1 (Var a) = a
---           helper1 a@(App _ _) = show a
---           helper1 a = "(" ++ show a ++ ")"
---           helper2 (Var a) = a
---           helper2 a = "(" ++ show a ++ ")"
+fullForm :: Term -> String
+fullForm (Var x) = x
+fullForm (Abs x (Var y)) = absHead ++ x ++ absOpr ++ y
+fullForm (Abs x y) = absHead ++ x ++ absOpr ++ "(" ++ fullForm y ++ ")"
+fullForm (App x y) = helper x ++ appOpr ++ helper y
+  where helper (Var a) = a
+        helper a = "(" ++ fullForm a ++ ")"
+
+parseFull :: Parser Term -> String -> IO ()
+parseFull p = helper . runParser p () ""
+  where helper (Left err) = do putStr "parse error at "
+                               print err
+        helper (Right x)  = putStrLn $ fullForm x
+
+instance Show Term where
+  show (Var x) = x
+  show (Abs x (Var y)) = absHead ++ x ++ absOpr ++ y
+  show (Abs x y) = absHead ++ x ++ absOpr ++ show y
+  show (App x y) = helper1 x ++ appOpr ++ helper2 y
+    where helper1 (Var a) = a
+          helper1 a@(App _ _) = show a
+          helper1 a = "(" ++ show a ++ ")"
+          helper2 (Var a) = a
+          helper2 a@(Abs _ _) = show a
+          helper2 a = "(" ++ show a ++ ")"
 
 lgh :: Term -> Int
 lgh (Var _) = 1
