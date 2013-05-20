@@ -5,6 +5,7 @@ import qualified Text.Parsec.Token as T
 import Text.Parsec.Language (emptyDef)
 import Text.Parsec.String (Parser)
 import Data.List (union, delete)
+import Data.Maybe (fromJust)
 
 type Ide = String
 data Term = Var Ide | App Term Term | Abs Ide Term deriving Eq
@@ -142,3 +143,36 @@ alphaCongruent (Abs x tx) (Abs y ty)
   | otherwise = alphaCongruent (subst (Var z) x tx) (subst (Var z) y ty)
   where z = genNewIde $ (freeVars tx) `union` (freeVars ty)
 
+-- Leftmost Outmost Reduce
+loReduce :: Term -> Maybe Term
+loReduce (Var _) = Nothing
+loReduce (App (Abs x t1) t2) = Just $ subst t2 x t1 --beta reduction
+loReduce (App t1 t2) =
+  case loReduce t1 of
+    Just t1' -> Just $ App t1' t2
+    Nothing ->
+      case loReduce t2 of
+        Just t2' -> Just $ App t1 t2'
+        Nothing -> Nothing
+loReduce (Abs x t'@(App t (Var y)))
+  | x == y && (x `notElem` (freeVars t)) = Just t --eta conversion
+  | otherwise =
+    case loReduce t' of
+      Just t'' -> Just $ Abs x t''
+      Nothing -> Nothing
+loReduce (Abs x t) =
+  case loReduce t of
+    Just t' -> Just $ Abs x t'
+    Nothing -> Nothing
+
+c_succ = parseLambda "\\n.\\f.\\x.f (n f x)"
+c_plus = parseLambda "\\m.\\n.\\f.\\x.m f (n f x)"
+
+churchNumeral :: Int -> Term
+churchNumeral n = Abs "f" (Abs "x" result)
+  where result = helper (App (Var "f")) n (Var "x")
+        helper f 0 x = x
+        helper f m x = helper f (m - 1) (f x)
+
+riskEval :: Term -> Term
+riskEval = fromJust . last . takeWhile (/=Nothing) . iterate (>>= loReduce) . Just
