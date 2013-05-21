@@ -14,6 +14,18 @@ absOpr = "."
 absHead = "\\"
 appOpr = " "
 
+instance Show Term where
+  show (Var x) = x
+  show (Abs x (Var y)) = absHead ++ x ++ absOpr ++ y
+  show (Abs x y) = absHead ++ x ++ absOpr ++ show y
+  show (App x y) = helper1 x ++ appOpr ++ helper2 y
+    where helper1 (Var a) = a
+          helper1 a@(App _ _) = show a
+          helper1 a = "(" ++ show a ++ ")"
+          helper2 (Var a) = a
+          helper2 a@(Abs _ _) = show a
+          helper2 a = "(" ++ show a ++ ")"
+
 -- Grammar is:
 -- var = letter, { letter | digit | "_" };
 -- term = chain_term, {chain_term};
@@ -46,16 +58,14 @@ termParser = do
 chainTermParser :: Parser Term
 chainTermParser = varParser <|> (parens termParser) <|>
                   do
-                    lexeme $ symbol "\\"
-                    m <- lexeme identifier
-                    lexeme $ symbol "."
-                    t <- lexeme termParser
+                    symbol "\\"
+                    m <- identifier
+                    symbol "."
+                    t <- termParser
                     return $ Abs m t
 
 lambdaParser :: Parser Term
-lambdaParser = do
-  whiteSpace
-  termParser
+lambdaParser = whiteSpace >> termParser
 
 fullForm :: Term -> String
 fullForm (Var x) = x
@@ -76,32 +86,7 @@ parseLambda = helper . runParser lambdaParser () ""
   where helper (Left err) = error $ show err
         helper (Right x) = x
 
-instance Show Term where
-  show (Var x) = x
-  show (Abs x (Var y)) = absHead ++ x ++ absOpr ++ y
-  show (Abs x y) = absHead ++ x ++ absOpr ++ show y
-  show (App x y) = helper1 x ++ appOpr ++ helper2 y
-    where helper1 (Var a) = a
-          helper1 a@(App _ _) = show a
-          helper1 a = "(" ++ show a ++ ")"
-          helper2 (Var a) = a
-          helper2 a@(Abs _ _) = show a
-          helper2 a = "(" ++ show a ++ ")"
-
 -- Theory part
-
-lgh :: Term -> Int
-lgh (Var _) = 1
-lgh (App x y) = lgh x + lgh y
-lgh (Abs _ y) = 1 + lgh y
-
-occur :: Term -> Term -> Bool
-p `occur` q
-  | p == q = True
-  | otherwise = helper p q
-  where helper m (App x y) = (m `occur` x) || (m `occur` y)
-        helper m (Abs x y) = (m == Var x) || (m `occur` y)
-        helper _ _ = False
 
 freeVars :: Term -> [Ide]
 freeVars (Var x) = [x]
