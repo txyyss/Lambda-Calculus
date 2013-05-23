@@ -4,7 +4,7 @@ import Text.Parsec
 import qualified Text.Parsec.Token as T
 import Text.Parsec.Language (emptyDef)
 import Text.Parsec.String (Parser)
-import Data.Maybe (fromJust)
+import Calculus
 
 type Ide = String
 data Term = Var Ide | Atom Ide | App Term Term deriving Eq
@@ -70,19 +70,16 @@ subst u x (App p q) = App (subst u x p) (subst u x q)
 subst u x m = m
 
 -- Leftmost Outmost Reduce
-loReduce :: Term -> Maybe Term
-loReduce (Var _) = Nothing
-loReduce (Atom _) = Nothing
-loReduce (App (Atom "I") x) = Just x
-loReduce (App (App (Atom "K") x) y) = Just x
-loReduce (App (App (App (Atom "S") x) y) z) = Just $ App (App x z) (App y z)
-loReduce (App t1 t2) =
-  case loReduce t1 of
-    Just t1' -> Just $ App t1' t2
-    Nothing ->
-      case loReduce t2 of
-        Just t2' -> Just $ App t1 t2'
-        Nothing -> Nothing
-
-riskEval :: Term -> Term
-riskEval = fromJust . last . takeWhile (/=Nothing) . iterate (>>= loReduce) . Just
+instance Reducible Term where
+  loReduce (Var _) = Nothing
+  loReduce (Atom _) = Nothing
+  loReduce (App (Atom "I") x) = Just x
+  loReduce (App (App (Atom "K") x) y) = Just x
+  loReduce (App (App (App (Atom "S") x) y) z) = Just $ App (App x z) (App y z)
+  loReduce (App t1 t2) =
+    case loReduce t1 of
+      Just t1' -> Just $ App t1' t2
+      Nothing ->
+        case loReduce t2 of
+          Just t2' -> Just $ App t1 t2'
+          Nothing -> Nothing
