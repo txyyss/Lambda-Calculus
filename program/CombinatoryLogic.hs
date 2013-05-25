@@ -4,7 +4,9 @@ import Text.Parsec
 import qualified Text.Parsec.Token as T
 import Text.Parsec.Language (emptyDef)
 import Text.Parsec.String (Parser)
+import Data.List (union)
 import Calculus
+import qualified PureLambda as P
 
 type Ide = String
 data Term = Var Ide | Atom Ide | App Term Term deriving Eq
@@ -62,6 +64,11 @@ parseCL = helper . runParser clParser () ""
 
 -- Theory
 
+freeVars :: Term -> [Ide]
+freeVars (Var x) = [x]
+freeVars (Atom x) = []
+freeVars (App t1 t2) = union (freeVars t1) (freeVars t2)
+
 subst :: Term -> Ide -> Term -> Term
 subst u x m@(Var y)
   | x == y = u
@@ -83,3 +90,19 @@ instance Reducible Term where
         case loReduce t2 of
           Just t2' -> Just $ App t1 t2'
           Nothing -> Nothing
+
+abstraction :: Ide -> Term -> Term
+abstraction x m
+  | x `notElem` (freeVars m) = App (Atom "K") m
+  | otherwise = helper m
+  where helper (Var y)
+          | x == y = Atom "I"
+        helper (App u v@(Var y))
+          | x == y && x `notElem` (freeVars u) = u
+        helper (App u v) = absApp u v
+        absApp u v = App (App (Atom "S") (abstraction x u)) (abstraction x v)
+
+lambdaToCL :: P.Term -> Term
+lambdaToCL (P.Var x) = Var x
+lambdaToCL (P.App m n) = App (lambdaToCL m) (lambdaToCL n)
+lambdaToCL (P.Abs x m) = abstraction x (lambdaToCL m)
