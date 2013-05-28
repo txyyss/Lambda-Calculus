@@ -56,7 +56,7 @@ termParser = do
   return $ foldl1 App ls
 
 chainTermParser :: Parser Term
-chainTermParser = varParser <|> (parens termParser) <|>
+chainTermParser = varParser <|> parens termParser <|>
                   do
                     symbol "\\"
                     m <- identifier
@@ -90,11 +90,11 @@ parseLambda = helper . runParser lambdaParser () ""
 
 freeVars :: Term -> [Ide]
 freeVars (Var x) = [x]
-freeVars (App t1 t2) = union (freeVars t1) (freeVars t2)
+freeVars (App t1 t2) = freeVars t1 `union` freeVars t2
 freeVars (Abs x t) = delete x $ freeVars t
 
 isClosed :: Term -> Bool
-isClosed x = freeVars x == []
+isClosed = null . freeVars
 
 subst :: Term -> Ide -> Term -> Term
 subst n x m@(Var y)
@@ -108,7 +108,7 @@ subst n x m@(Abs y p)
   | otherwise = Abs z $ subst n x $ subst (Var z) y p
   where freeP = freeVars p
         freeN = freeVars n
-        freeNP = union freeP freeN
+        freeNP = freeP `union` freeN
         z = genNewIde freeNP
 
 genNewIde :: [Ide] -> Ide
@@ -117,22 +117,22 @@ genNewIde ids = head $ filter (`notElem` ids) allWords
 allWords :: [String]
 allWords = concat $ iterate addPrefix initVars
   where addPrefix s = [a:b | a <- alphabet, b<-s]
-        initVars = map (\x->[x]) alphabet
+        initVars = map (: []) alphabet
         alphabet = ['a'..'z']
 
 alphaCongruent :: Term -> Term -> Bool
 alphaCongruent (Var x) (Var y) = x == y
-alphaCongruent (App x1 y1) (App x2 y2) = (alphaCongruent x1 x2) && (alphaCongruent y1 y2)
+alphaCongruent (App x1 y1) (App x2 y2) = alphaCongruent x1 x2 && alphaCongruent y1 y2
 alphaCongruent (Abs x tx) (Abs y ty)
   | x == y = alphaCongruent tx ty
   | otherwise = alphaCongruent (subst (Var z) x tx) (subst (Var z) y ty)
-  where z = genNewIde $ (freeVars tx) `union` (freeVars ty)
+  where z = genNewIde $ freeVars tx `union` freeVars ty
 
 -- Leftmost Outmost Reduce
 instance Reducible Term where
   loReduce (Var _) = Nothing
   loReduce (Abs x t'@(App t (Var y)))
-    | x == y && (x `notElem` (freeVars t)) = Just t --eta conversion
+    | x == y && (x `notElem` freeVars t) = Just t --eta conversion
     | otherwise =
       case loReduce t' of
         Just t'' -> Just $ Abs x t''
@@ -150,8 +150,8 @@ instance Reducible Term where
       Just t' -> Just $ Abs x t'
       Nothing -> Nothing
 
-c_succ = parseLambda "\\n.\\f.\\x.f (n f x)"
-c_plus = parseLambda "\\m.\\n.\\f.\\x.m f (n f x)"
+cSucc = parseLambda "\\n.\\f.\\x.f (n f x)"
+cPlus = parseLambda "\\m.\\n.\\f.\\x.m f (n f x)"
 
 churchNumeral :: Int -> Term
 churchNumeral n = Abs "f" (Abs "x" result)
