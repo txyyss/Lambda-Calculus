@@ -1,0 +1,71 @@
+首先要定义一个无类型的纯 lambda 项的上下文无关文法：
+
+var = letter, { letter | digit | "_" };
+
+term = var
+     | "\", var, ".", term
+     | "(", term, ")"
+     | func, arg;
+
+arg = var
+    | "\", var, ".", term
+    | "(", term, ")" ;
+
+func = var
+     | "(", "\", var, ".", term, ")"
+     | "(", func, ")"
+     | func, arg;
+
+特别注意到最后一项： func = func, arg 是左递归，这可不太好。所以最后这项要改成
+
+func = var, func_tail
+     | "(", "\", var, ".", term, ")", func_tail
+     | "(", func, ")", func_tail
+
+func_tail = empty 
+          | arg, func_tail
+
+我想这个文法应该没有二义性，但怎么看怎么像一个 LL(inf) 的文法，而且定
+义得很啰嗦。不过这个文法还是有二义性的，问题出在最后的 arg 上，func 可
+以扩展成 func, arg, arg，然后 arg 是 lambda 表达式的话就不好办了，会出
+现歧义。所以要小心的重新定义。
+
+var = letter, { letter | digit | "_" };
+
+term = { head_term }, tail_term;
+
+head_term = var
+          | "(", term, ")";
+tail_term = "\", var, ".", term
+          | head_term;
+
+我觉得这个文法差不多应该可以了吧，可以试试看了。
+
+试验结果是虽然看上去对了，但实际最好改成下面这个样子才能正常：
+
+var = letter, { letter | digit | "_" };
+
+term = { chain_term }, lambda_term
+     | chain_term, {chain_term};
+
+chain_term = var
+          | "(", term, ")";
+
+lambda_term = "\", var, ".", term;
+
+但上面这项里面 term 的解析还是太复杂了，需要回溯。记住 lambda 表达式
+\var.term 中 var 的范围是达到它能达到的最远，所以实际这么写就行了：
+
+var = letter, { letter | digit | "_" };
+
+term = chain_term, {chain_term};
+
+chain_term = var
+          | "(", term, ")"
+          | "\", var, ".", term;
+
+对于上面这个文法是有二义性的，比如 \x.y \m.z 这个可能是 (\x.y) (\m.z)，
+也可能是 \x. (y (\m.z))。但写成递归下降分析器的话，自然会取后一种解析
+方式，这正是我们需要的。所以从实际角度看，不会造成不确定性。要无二义性
+文法呢，还是前一个表述方法好，但要解析呢，还是后面这种。注意到
+chain_term 的开头各不相同，所以这个还是个很不错的 LL(1) 解析器，效率高。
