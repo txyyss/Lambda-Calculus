@@ -4,7 +4,7 @@ import Text.Parsec
 import qualified Text.Parsec.Token as T
 import Text.Parsec.Language (emptyDef)
 import Text.Parsec.String (Parser)
-import Data.List (union)
+import Data.List (union, nub, intersperse)
 import Calculus
 import qualified PureLambda as P
 import Test.QuickCheck
@@ -124,6 +124,16 @@ lgh (Atom _) = 1
 lgh (App t1 t2) = (lgh t1) + (lgh t2)
 
 propShowParse :: Term -> Property
-propShowParse t = classify (lgh t == 1) "trivial" (show (parseCL str) == str)
-  where str = show t
+propShowParse t = classify (lgh t <= 5) "trivial" ((parseCL $ show t) == t)
 
+data TestLambdaToCL = TestLToCL String deriving Show
+
+instance Arbitrary TestLambdaToCL where
+  arbitrary = liftM TestLToCL (listOf1 $ elements ['a'..'z'])
+
+propLambdaToCL :: TestLambdaToCL -> Bool
+propLambdaToCL (TestLToCL s) = (show $ riskEval $ parseCL clExpr) == expr
+  where expr = intersperse ' ' s
+        absExpr = nub s
+        lambdaExpr = (concatMap (\x -> "\\"++[x]++".") absExpr) ++ " " ++ expr
+        clExpr = (show $ lambdaToCL $ P.parseLambda lambdaExpr) ++ " " ++ (intersperse ' ' absExpr)
