@@ -28,17 +28,17 @@ simpleForm :: Term -> String
 simpleForm (Var x) = x
 simpleForm (Abs x (Var y)) = absHead ++ x ++ absOpr ++ y
 simpleForm (Abs x y) = absHead ++ x ++ absOpr ++ simpleForm y
-simpleForm (App x y) = helper1 x ++ appOpr ++ helper2 y
+simpleForm (App x y) = helper1 x ++ appOpr ++ helper2 y False
   where helper1 (Var a) = a
-        helper1 a@(App _ _) = simpleForm a
+        helper1 (App x y) = helper1 x ++ appOpr ++ helper2 y True
         helper1 a = "(" ++ simpleForm a ++ ")"
-        helper2 (Var a) = a
-        helper2 a@(Abs _ _) = simpleForm a
-        helper2 a = "(" ++ simpleForm a ++ ")"
-
+        helper2 (Var a) _ = a
+        helper2 a@(Abs _ _) False = simpleForm a
+        helper2 a@(Abs _ _) True = "(" ++ simpleForm a ++ ")"
+        helper2 a _ = "(" ++ simpleForm a ++ ")"
 
 instance Show Term where
-  show = fullForm
+  show = simpleForm
 
 -- Grammar is:
 -- var = letter, { letter | digit | "_" };
@@ -175,13 +175,8 @@ lgh (Var _) = 1
 lgh (App t1 t2) = lgh t1 + lgh t2
 lgh (Abs _ t) = 1 + lgh t
 
--- propShowParse :: Term -> Property
--- propShowParse t = classify (lgh t <= 5) "trivial"
---                   (parseLambda str == t &&
---                    show (parseLambda str) == str)
---   where str = show t
-
-propParseIdentity :: Term -> Property
-propParseIdentity t = classify (lgh t <= 5) "trivial"
-                      (parseLambda str == t)
-  where str = simpleForm t
+propParse :: Term -> Property
+propParse t = classify (lgh t <= 5) "trivial"
+                  (parseLambda str == t &&
+                   simpleForm (parseLambda str) == str)
+  where str = show t
