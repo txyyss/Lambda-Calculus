@@ -6,6 +6,8 @@ import Text.Parsec.Language (emptyDef)
 import Text.Parsec.String (Parser)
 import Data.List (union, delete)
 import Calculus
+import Test.QuickCheck
+import Control.Monad (liftM, liftM2)
 
 type Ide = String
 data Term = Var Ide | App Term Term | Abs Ide Term deriving Eq
@@ -158,3 +160,30 @@ churchNumeral n = Abs "f" (Abs "x" result)
   where result = helper (App (Var "f")) n (Var "x")
         helper f 0 x = x
         helper f m x = helper f (m - 1) (f x)
+
+-- Test code
+
+instance Arbitrary Term where
+  arbitrary = sized arbTerm
+    where arbChar = elements ['a'..'z']
+          arbTerm 0 = liftM (Var . (:[])) arbChar
+          arbTerm 1 = arbTerm 0
+          arbTerm n = oneof [liftM2 Abs (liftM (:[]) arbChar) (arbTerm (n-1)),
+                     liftM2 App (arbTerm nd2) (arbTerm (n - nd2))]
+            where nd2 = n `div` 2
+
+lgh :: Term -> Int
+lgh (Var _) = 1
+lgh (App t1 t2) = lgh t1 + lgh t2
+lgh (Abs _ t) = 1 + lgh t
+
+-- propShowParse :: Term -> Property
+-- propShowParse t = classify (lgh t <= 5) "trivial"
+--                   (parseLambda str == t &&
+--                    show (parseLambda str) == str)
+--   where str = show t
+
+propShowParse :: Term -> Property
+propShowParse t = classify (lgh t <= 5) "trivial"
+                  (parseLambda str == t)
+  where str = show t
