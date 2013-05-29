@@ -112,10 +112,11 @@ lambdaToCL (P.Abs x m) = abstraction x (lambdaToCL m)
 -- Test code
 
 instance Arbitrary Term where
-  arbitrary = frequency [ (1, arbitraryVar), (1, arbitraryAtom), (1, arbitraryApp)]
-    where arbitraryVar = liftM (\x -> Var [x]) (elements ['a'..'z'])
-          arbitraryAtom = liftM Atom (elements ["S","K","I"])
-          arbitraryApp = liftM2 App arbitrary arbitrary
+  arbitrary = sized arbTerm
+    where arbTerm 0 = oneof [liftM (\x -> Var [x]) (elements ['a'..'z']),
+                             liftM Atom (elements ["S","K","I"])]
+          arbTerm 1 = arbTerm 0
+          arbTerm n = liftM2 App (arbTerm (n `div` 2)) (arbTerm (n - n `div` 2))
 
 lgh :: Term -> Int
 lgh (Var _) = 1
@@ -123,6 +124,6 @@ lgh (Atom _) = 1
 lgh (App t1 t2) = (lgh t1) + (lgh t2)
 
 propShowParse :: Term -> Property
-propShowParse t = collect (lgh t) (show (parseCL str) == str)
+propShowParse t = classify (lgh t == 1) "trivial" (show (parseCL str) == str)
   where str = show t
 
