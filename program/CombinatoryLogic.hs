@@ -119,14 +119,13 @@ instance Arbitrary Term where
           arbTerm n = liftM2 App (arbTerm (n `div` 2)) (arbTerm (n - n `div` 2))
 
 lgh :: Term -> Int
-lgh (Var _) = 1
-lgh (Atom _) = 1
-lgh (App t1 t2) = (lgh t1) + (lgh t2)
+lgh (App t1 t2) = lgh t1 + lgh t2
+lgh _ = 1
 
 propShowParse :: Term -> Property
 propShowParse t = classify (lgh t <= 5) "trivial"
-                  ((parseCL $ show t) == t &&
-                   (show $ parseCL str) == str)
+                  (parseCL (show t) == t &&
+                   show (parseCL str) == str)
   where str = show t
 
 data TestLambdaToCL = TestLToCL String deriving Show
@@ -135,8 +134,8 @@ instance Arbitrary TestLambdaToCL where
   arbitrary = liftM TestLToCL (listOf1 $ elements ['a'..'z'])
 
 propLambdaToCL :: TestLambdaToCL -> Bool
-propLambdaToCL (TestLToCL s) = (show $ riskEval $ parseCL clExpr) == expr
+propLambdaToCL (TestLToCL s) = show (riskEval $ parseCL clExpr) == expr
   where expr = intersperse ' ' s
         absExpr = nub s
-        lambdaExpr = (concatMap (\x -> "\\"++[x]++".") absExpr) ++ " " ++ expr
-        clExpr = (show $ lambdaToCL $ P.parseLambda lambdaExpr) ++ " " ++ (intersperse ' ' absExpr)
+        lambdaExpr = concatMap (\x -> "\\"++[x]++".") absExpr ++ " " ++ expr
+        clExpr = show (lambdaToCL $ P.parseLambda lambdaExpr) ++ " " ++ intersperse ' ' absExpr
