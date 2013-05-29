@@ -16,17 +16,29 @@ absOpr = "."
 absHead = "\\"
 appOpr = " "
 
+fullForm :: Term -> String
+fullForm (Var x) = x
+fullForm (Abs x (Var y)) = absHead ++ x ++ absOpr ++ y
+fullForm (Abs x y) = absHead ++ x ++ absOpr ++ "(" ++ fullForm y ++ ")"
+fullForm (App x y) = helper x ++ appOpr ++ helper y
+  where helper (Var a) = a
+        helper a = "(" ++ fullForm a ++ ")"
+
+simpleForm :: Term -> String
+simpleForm (Var x) = x
+simpleForm (Abs x (Var y)) = absHead ++ x ++ absOpr ++ y
+simpleForm (Abs x y) = absHead ++ x ++ absOpr ++ simpleForm y
+simpleForm (App x y) = helper1 x ++ appOpr ++ helper2 y
+  where helper1 (Var a) = a
+        helper1 a@(App _ _) = simpleForm a
+        helper1 a = "(" ++ simpleForm a ++ ")"
+        helper2 (Var a) = a
+        helper2 a@(Abs _ _) = simpleForm a
+        helper2 a = "(" ++ simpleForm a ++ ")"
+
+
 instance Show Term where
-  show (Var x) = x
-  show (Abs x (Var y)) = absHead ++ x ++ absOpr ++ y
-  show (Abs x y) = absHead ++ x ++ absOpr ++ show y
-  show (App x y) = helper1 x ++ appOpr ++ helper2 y
-    where helper1 (Var a) = a
-          helper1 a@(App _ _) = show a
-          helper1 a = "(" ++ show a ++ ")"
-          helper2 (Var a) = a
-          helper2 a@(Abs _ _) = show a
-          helper2 a = "(" ++ show a ++ ")"
+  show = fullForm
 
 -- Grammar is:
 -- var = letter, { letter | digit | "_" };
@@ -68,20 +80,6 @@ chainTermParser = varParser <|> parens termParser <|>
 
 lambdaParser :: Parser Term
 lambdaParser = whiteSpace >> termParser
-
-fullForm :: Term -> String
-fullForm (Var x) = x
-fullForm (Abs x (Var y)) = absHead ++ x ++ absOpr ++ y
-fullForm (Abs x y) = absHead ++ x ++ absOpr ++ "(" ++ fullForm y ++ ")"
-fullForm (App x y) = helper x ++ appOpr ++ helper y
-  where helper (Var a) = a
-        helper a = "(" ++ fullForm a ++ ")"
-
-parseFull :: Parser Term -> String -> IO ()
-parseFull p = helper . runParser p () ""
-  where helper (Left err) = do putStr "parse error at "
-                               print err
-        helper (Right x)  = putStrLn $ fullForm x
 
 parseLambda :: String -> Term
 parseLambda = helper . runParser lambdaParser () ""
@@ -183,7 +181,7 @@ lgh (Abs _ t) = 1 + lgh t
 --                    show (parseLambda str) == str)
 --   where str = show t
 
-propShowParse :: Term -> Property
-propShowParse t = classify (lgh t <= 5) "trivial"
-                  (parseLambda str == t)
-  where str = show t
+propParseIdentity :: Term -> Property
+propParseIdentity t = classify (lgh t <= 5) "trivial"
+                      (parseLambda str == t)
+  where str = simpleForm t
