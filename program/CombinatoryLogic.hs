@@ -124,7 +124,10 @@ lgh (Atom _) = 1
 lgh (App t1 t2) = (lgh t1) + (lgh t2)
 
 propShowParse :: Term -> Property
-propShowParse t = classify (lgh t <= 5) "trivial" ((parseCL $ show t) == t)
+propShowParse t = classify (lgh t <= 5) "trivial"
+                  ((parseCL $ show t) == t &&
+                   (show $ parseCL str) == str)
+  where str = show t
 
 data TestLambdaToCL = TestLToCL String deriving Show
 
