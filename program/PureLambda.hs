@@ -150,6 +150,10 @@ instance Reducible Term where
       Just t' -> Just $ Abs x t'
       Nothing -> Nothing
 
+  lgh (Var _) = 1
+  lgh (App t1 t2) = lgh t1 + lgh t2
+  lgh (Abs _ t) = 1 + lgh t
+
 cSucc = parseLambda "\\n.\\f.\\x.f (n f x)"
 cPlus = parseLambda "\\m.\\n.\\f.\\x.m f (n f x)"
 
@@ -169,11 +173,6 @@ instance Arbitrary Term where
           arbTerm n = oneof [liftM2 Abs (liftM (:[]) arbChar) (arbTerm (n-1)),
                      liftM2 App (arbTerm nd2) (arbTerm (n - nd2))]
             where nd2 = n `div` 2
-
-lgh :: Term -> Int
-lgh (Var _) = 1
-lgh (App t1 t2) = lgh t1 + lgh t2
-lgh (Abs _ t) = 1 + lgh t
 
 propParse :: Term -> Property
 propParse t = classify (lgh t <= 5) "trivial"

@@ -9,6 +9,7 @@ import Calculus
 import qualified PureLambda as P
 import Test.QuickCheck
 import Control.Monad (liftM, liftM2)
+import Data.Maybe (fromJust)
 
 type Ide = String
 data Term = Var Ide | Atom Ide | App Term Term deriving Eq
@@ -93,6 +94,9 @@ instance Reducible Term where
           Just t2' -> Just $ App t1 t2'
           Nothing -> Nothing
 
+  lgh (App t1 t2) = lgh t1 + lgh t2
+  lgh _ = 1
+
 abstraction :: Ide -> Term -> Term
 abstraction x m
   | x `notElem` freeVars m = App (Atom "K") m
@@ -118,10 +122,6 @@ instance Arbitrary Term where
           arbTerm 1 = arbTerm 0
           arbTerm n = liftM2 App (arbTerm (n `div` 2)) (arbTerm (n - n `div` 2))
 
-lgh :: Term -> Int
-lgh (App t1 t2) = lgh t1 + lgh t2
-lgh _ = 1
-
 propShowParse :: Term -> Property
 propShowParse t = classify (lgh t <= 5) "trivial"
                   (parseCL (show t) == t &&
@@ -134,7 +134,7 @@ instance Arbitrary TestLambdaToCL where
   arbitrary = liftM TestLToCL (listOf1 $ elements ['a'..'z'])
 
 propLambdaToCL :: TestLambdaToCL -> Bool
-propLambdaToCL (TestLToCL s) = show (riskEval $ parseCL clExpr) == expr
+propLambdaToCL (TestLToCL s) = show (fromJust . eval $ parseCL clExpr) == expr
   where expr = intersperse ' ' s
         absExpr = nub s
         lambdaExpr = concatMap (\x -> "\\"++[x]++".") absExpr ++ " " ++ expr
