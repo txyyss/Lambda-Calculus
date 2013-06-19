@@ -9,7 +9,6 @@ import Calculus
 import qualified PureLambda as P
 import Test.QuickCheck
 import Control.Monad (liftM, liftM2)
-import Data.Maybe (fromJust)
 
 type Ide = String
 data Term = Var Ide | Atom Ide | App Term Term deriving Eq
@@ -134,8 +133,10 @@ instance Arbitrary TestLambdaToCL where
   arbitrary = liftM TestLToCL (listOf1 $ elements ['a'..'z'])
 
 propLambdaToCL :: TestLambdaToCL -> Bool
-propLambdaToCL (TestLToCL s) = show (fromJust . eval $ parseCL clExpr) == expr
+propLambdaToCL (TestLToCL s) = show (eval $ parseCL clExpr) == "Right " ++ expr
   where expr = intersperse ' ' s
         absExpr = nub s
         lambdaExpr = concatMap (\x -> "\\"++[x]++".") absExpr ++ " " ++ expr
         clExpr = show (lambdaToCL $ P.parseLambda lambdaExpr) ++ " " ++ intersperse ' ' absExpr
+
+-- quickCheckWith stdArgs{maxSize=30} propLambdaToCL
