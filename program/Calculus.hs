@@ -5,11 +5,11 @@ import Control.Monad.Identity
 import Control.Monad.Error
 import Control.Monad.Reader
 
-data ReducibleSettings = ReducibleSettings {maxSteps :: Int -> Int}
+data CalculusSettings = CalculusSettings {maxSteps :: Int -> Int}
 
-stdReducibleSettings = ReducibleSettings {maxSteps = (* 10)}
+stdCalculusSettings = CalculusSettings {maxSteps = (* 10)}
 
-type Eval a = ReaderT ReducibleSettings (ErrorT String Identity) a
+type Eval a = ReaderT CalculusSettings (ErrorT String Identity) a
 
 class Eq a => Reducible a where
   loReduce :: a -> Maybe a
@@ -23,8 +23,8 @@ class Eq a => Reducible a where
     where steps = stepFun $ lgh x
           trace = take steps . takeWhile (/=Nothing) . iterate (>>= loReduce) $ Just x
 
-  runEval :: Eval a -> ReducibleSettings -> Either String a
+  runEval :: Eval a -> CalculusSettings -> Either String a
   runEval ev = runIdentity . runErrorT . runReaderT ev
 
   eval :: a -> Either String a
-  eval x = runEval ((asks maxSteps) >>= (evalWith x)) stdReducibleSettings
+  eval x = runEval ((asks maxSteps) >>= (evalWith x)) stdCalculusSettings
