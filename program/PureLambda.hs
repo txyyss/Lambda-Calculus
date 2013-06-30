@@ -5,9 +5,31 @@ import qualified Text.Parsec.Token as T
 import Text.Parsec.Language (emptyDef)
 import Text.Parsec.String (Parser)
 import Data.List (union, delete)
-import Calculus
 import Test.QuickCheck
 import Control.Monad (liftM, liftM2)
+import Data.Maybe (fromJust)
+import Control.Monad.Identity
+import Control.Monad.Error
+import Control.Monad.Reader
+
+data CalculusSettings = CalculusSettings {maxSteps :: Int -> Int}
+
+stdCalculusSettings = CalculusSettings {maxSteps = (* 10)}
+
+type Eval a = ReaderT CalculusSettings (ErrorT String Identity) a
+
+evalWith :: Term -> (Int -> Int) -> Eval Term
+evalWith x stepFun
+  | length trace < steps = return $ fromJust $ last trace
+  | otherwise = throwError "Can't be reduced!"
+  where steps = stepFun $ lgh x
+        trace = take steps . takeWhile (/=Nothing) . iterate (>>= loReduce) $ Just x
+
+runEval :: Eval a -> CalculusSettings -> Either String a
+runEval ev = runIdentity . runErrorT . runReaderT ev
+
+eval :: Term -> Either String Term
+eval x = runEval ((asks maxSteps) >>= (evalWith x)) stdCalculusSettings
 
 type Ide = String
 data Term = Var Ide | App Term Term | Abs Ide Term deriving Eq
@@ -129,30 +151,30 @@ alphaCongruent (Abs x tx) (Abs y ty)
   where z = genNewIde $ freeVars tx `union` freeVars ty
 
 -- Leftmost Outmost Reduce
-instance Reducible Term where
-  loReduce (Var _) = Nothing
-  loReduce (Abs x t'@(App t (Var y)))
-    | x == y && (x `notElem` freeVars t) = Just t --eta conversion
-    | otherwise =
-      case loReduce t' of
-        Just t'' -> Just $ Abs x t''
-        Nothing -> Nothing
-  loReduce (App (Abs x t1) t2) = Just $ subst t2 x t1 --beta reduction
-  loReduce (App t1 t2) =
-    case loReduce t1 of
-      Just t1' -> Just $ App t1' t2
-      Nothing ->
-        case loReduce t2 of
-          Just t2' -> Just $ App t1 t2'
-          Nothing -> Nothing
-  loReduce (Abs x t) =
-    case loReduce t of
-      Just t' -> Just $ Abs x t'
-      Nothing -> Nothing
 
-  lgh (Var _) = 1
-  lgh (App t1 t2) = lgh t1 + lgh t2
-  lgh (Abs _ t) = 1 + lgh t
+loReduce (Var _) = Nothing
+loReduce (Abs x t'@(App t (Var y)))
+  | x == y && (x `notElem` freeVars t) = Just t --eta conversion
+  | otherwise =
+    case loReduce t' of
+      Just t'' -> Just $ Abs x t''
+      Nothing -> Nothing
+loReduce (App (Abs x t1) t2) = Just $ subst t2 x t1 --beta reduction
+loReduce (App t1 t2) =
+  case loReduce t1 of
+    Just t1' -> Just $ App t1' t2
+    Nothing ->
+      case loReduce t2 of
+        Just t2' -> Just $ App t1 t2'
+        Nothing -> Nothing
+loReduce (Abs x t) =
+  case loReduce t of
+    Just t' -> Just $ Abs x t'
+    Nothing -> Nothing
+
+lgh (Var _) = 1
+lgh (App t1 t2) = lgh t1 + lgh t2
+lgh (Abs _ t) = 1 + lgh t
 
 cSucc = parseLambda "\\n.\\f.\\x.f (n f x)"
 cPlus = parseLambda "\\m.\\n.\\f.\\x.m f (n f x)"
