@@ -6,8 +6,8 @@ import Text.Parsec.Language (emptyDef)
 import Text.Parsec.String (Parser)
 import Data.List (union, delete)
 import Test.QuickCheck
-import Control.Monad (liftM, liftM2)
 import Data.Maybe (fromJust)
+import Control.Monad (liftM, liftM2)
 import Control.Monad.Identity
 import Control.Monad.Error
 import Control.Monad.Reader
@@ -18,17 +18,21 @@ stdCalculusSettings = CalculusSettings {maxSteps = (* 10)}
 
 type Eval a = ReaderT CalculusSettings (ErrorT String Identity) a
 
-evalWith :: Term -> (Int -> Int) -> Eval Term
-evalWith x stepFun
-  | length trace < steps = return $ fromJust $ last trace
-  | otherwise = throwError "Can't be reduced!"
-  where steps = stepFun $ lgh x
-        trace = take steps . takeWhile (/=Nothing) . iterate (>>= loReduce) $ Just x
+evalWith :: String -> (Int -> Int) -> Eval Term
+evalWith input stepFunc =
+  case parseLambda input of
+    Left err -> throwError err
+    Right x -> helper x stepFunc
+      where helper x stepFun
+              | length trace < steps = return $ fromJust $ last trace
+              | otherwise = throwError "Can't be reduced!"
+              where steps = stepFun $ lgh x
+                    trace = take steps . takeWhile (/=Nothing) . iterate (>>= loReduce) $ Just x
 
 runEval :: Eval a -> CalculusSettings -> Either String a
 runEval ev = runIdentity . runErrorT . runReaderT ev
 
-eval :: Term -> Either String Term
+eval :: String -> Either String Term
 eval x = runEval ((asks maxSteps) >>= (evalWith x)) stdCalculusSettings
 
 type Ide = String
@@ -103,10 +107,15 @@ chainTermParser = varParser <|> parens termParser <|>
 lambdaParser :: Parser Term
 lambdaParser = whiteSpace >> termParser
 
-parseLambda :: String -> Term
-parseLambda = helper . runParser lambdaParser () ""
+parseLambda' :: String -> Term
+parseLambda' = helper . runParser lambdaParser () ""
   where helper (Left err) = error $ show err
         helper (Right x) = x
+
+parseLambda :: String -> Either String Term
+parseLambda = helper . runParser lambdaParser () ""
+  where helper (Left err) = Left $ show err
+        helper (Right x) = Right x
 
 -- Theory part
 
@@ -176,8 +185,8 @@ lgh (Var _) = 1
 lgh (App t1 t2) = lgh t1 + lgh t2
 lgh (Abs _ t) = 1 + lgh t
 
-cSucc = parseLambda "\\n.\\f.\\x.f (n f x)"
-cPlus = parseLambda "\\m.\\n.\\f.\\x.m f (n f x)"
+cSucc = parseLambda' "\\n.\\f.\\x.f (n f x)"
+cPlus = parseLambda' "\\m.\\n.\\f.\\x.m f (n f x)"
 
 churchNumeral :: Int -> Term
 churchNumeral n = Abs "f" (Abs "x" result)
@@ -198,6 +207,6 @@ instance Arbitrary Term where
 
 propParse :: Term -> Property
 propParse t = classify (lgh t <= 5) "trivial"
-                  (parseLambda str == t &&
-                   simpleForm (parseLambda str) == str)
+                  (parseLambda' str == t &&
+                   simpleForm (parseLambda' str) == str)
   where str = show t

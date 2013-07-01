@@ -137,6 +137,6 @@ propLambdaToCL (TestLToCL s) = show (eval $ parseCL clExpr) == "Right " ++ expr
   where expr = intersperse ' ' s
         absExpr = nub s
         lambdaExpr = concatMap (\x -> "\\"++[x]++".") absExpr ++ " " ++ expr
-        clExpr = show (lambdaToCL $ P.parseLambda lambdaExpr) ++ " " ++ intersperse ' ' absExpr
+        clExpr = show (lambdaToCL $ P.parseLambda' lambdaExpr) ++ " " ++ intersperse ' ' absExpr
 
 -- quickCheckWith stdArgs{maxSize=30} propLambdaToCL
