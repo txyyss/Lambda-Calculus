@@ -2,6 +2,7 @@ module PureLambda where
 
 import Text.Parsec
 import qualified Text.Parsec.Token as T
+import qualified Data.Map as Map
 import Text.Parsec.Language (emptyDef)
 import Text.Parsec.String (Parser)
 import Data.List (union, delete)
@@ -11,12 +12,21 @@ import Control.Monad (liftM, liftM2)
 import Control.Monad.Identity
 import Control.Monad.Error
 import Control.Monad.Reader
+import Control.Monad.State
 
 data CalculusSettings = CalculusSettings {maxSteps :: Int -> Int}
 
+type Ide = String
+data Term = Var Ide | App Term Term | Abs Ide Term deriving Eq
+
+type LambdaState = Map.Map Ide Term
+
 stdCalculusSettings = CalculusSettings {maxSteps = (* 10)}
 
-type Eval a = ReaderT CalculusSettings (ErrorT String Identity) a
+type Eval a = StateT LambdaState (ReaderT CalculusSettings (ErrorT String Identity)) a
+
+runEval :: Eval a -> LambdaState -> CalculusSettings -> Either String a
+runEval ev st = runIdentity . runErrorT . runReaderT (evalStateT ev st) 
 
 evalWith :: String -> (Int -> Int) -> Eval Term
 evalWith input stepFunc =
@@ -29,14 +39,8 @@ evalWith input stepFunc =
               where steps = stepFun $ lgh x
                     trace = take steps . takeWhile (/=Nothing) . iterate (>>= loReduce) $ Just x
 
-runEval :: Eval a -> CalculusSettings -> Either String a
-runEval ev = runIdentity . runErrorT . runReaderT ev
-
 eval :: String -> Either String Term
-eval x = runEval ((asks maxSteps) >>= (evalWith x)) stdCalculusSettings
-
-type Ide = String
-data Term = Var Ide | App Term Term | Abs Ide Term deriving Eq
+eval x = runEval ((asks maxSteps) >>= (evalWith x)) Map.empty stdCalculusSettings
 
 absOpr = "."
 absHead = "\\"
