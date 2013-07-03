@@ -9,6 +9,7 @@ import Calculus
 import qualified PureLambda as P
 import Test.QuickCheck
 import Control.Monad (liftM, liftM2)
+import Control.Applicative((<*))
 
 type Ide = String
 data Term = Var Ide | Atom Ide | App Term Term deriving Eq
@@ -57,7 +58,7 @@ chainTermParser = atomParser "S" <|>
                   parens termParser
 
 clParser :: Parser Term
-clParser = whiteSpace >> termParser
+clParser = whiteSpace >> termParser <* eof
 
 parseCL :: String -> Term
 parseCL = helper . runParser clParser () ""

@@ -13,11 +13,13 @@ import Control.Monad.Identity
 import Control.Monad.Error
 import Control.Monad.Reader
 import Control.Monad.State
+import Control.Applicative((<*))
 
 data CalculusSettings = CalculusSettings {maxSteps :: Int -> Int}
 
 type Ide = String
 data Term = Var Ide | App Term Term | Abs Ide Term deriving Eq
+data LambdaCalculus = Asg Ide Term | Expr Term deriving Eq
 
 type LambdaState = Map.Map Ide Term
 
@@ -70,6 +72,10 @@ simpleForm (App x y) = helper1 x ++ appOpr ++ helper2 y False
 instance Show Term where
   show = simpleForm
 
+instance Show LambdaCalculus where
+  show (Asg id t) = id ++ " = " ++ show t
+  show (Expr t) = show t
+
 -- Grammar is:
 -- var = letter, { letter | digit | "_" };
 -- term = chain_term, {chain_term};
@@ -79,20 +85,21 @@ instance Show Term where
 
 
 -- Lexer
+pureLambdaDef = emptyDef {T.reservedOpNames = ["="]}
+  
 lexer :: T.TokenParser ()
-lexer = T.makeTokenParser emptyDef
+lexer = T.makeTokenParser pureLambdaDef
 
 whiteSpace = T.whiteSpace lexer
 lexeme     = T.lexeme lexer
 symbol     = T.symbol lexer
 parens     = T.parens lexer
 identifier = T.identifier lexer
+reservedOp = T.reservedOp lexer
 
 -- Parser
 varParser :: Parser Term
-varParser = do
-  var <- identifier;
-  return $ Var var
+varParser = liftM Var identifier
 
 termParser :: Parser Term
 termParser = do
@@ -108,8 +115,18 @@ chainTermParser = varParser <|> parens termParser <|>
                     t <- termParser
                     return $ Abs m t
 
+assignmentParser :: Parser LambdaCalculus
+assignmentParser = do
+  m <- identifier
+  reservedOp "="
+  t <- termParser
+  return $ Asg m t
+
+lambdaCalculusParser :: Parser LambdaCalculus
+lambdaCalculusParser = try assignmentParser <|> (liftM Expr termParser)
+
 lambdaParser :: Parser Term
-lambdaParser = whiteSpace >> termParser
+lambdaParser = whiteSpace >> termParser <* eof
 
 parseLambda' :: String -> Term
 parseLambda' = helper . runParser lambdaParser () ""
