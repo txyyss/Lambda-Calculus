@@ -14,6 +14,7 @@ import Control.Monad.Error
 import Control.Monad.Reader
 import Control.Monad.State
 import Control.Applicative((<*))
+import System.IO
 
 data CalculusSettings = CalculusSettings {maxSteps :: Int -> Int}
 
@@ -103,7 +104,7 @@ assignmentParser = do
   return $ Asg m t
 
 lambdaCalculusParser :: Parser LambdaCalculus
-lambdaCalculusParser = try (liftM Right assignmentParser) <|> (liftM Left termParser)
+lambdaCalculusParser = try (liftM Right assignmentParser) <|> liftM Left termParser
 
 calculusParser :: Parser LambdaCalculus
 calculusParser = whiteSpace >> lambdaCalculusParser <* eof
@@ -255,20 +256,6 @@ type InterpM = StateT LambdaState (ReaderT CalculusSettings (ErrorT String Ident
 runInterpM :: InterpM a -> LambdaState -> CalculusSettings -> Either String a
 runInterpM ev st = runIdentity . runErrorT . runReaderT (evalStateT ev st) 
 
-evalWith :: String -> (Int -> Int) -> InterpM TermL
-evalWith input stepFunc =
-  case parseLambda input of
-    Left err -> throwError err
-    Right x -> helper x stepFunc
-      where helper x stepFun
-              | length trace < steps = return $ fromJust $ last trace
-              | otherwise = throwError "Can't be reduced!"
-              where steps = stepFun $ lgh x
-                    trace = take steps . takeWhile (/=Nothing) . iterate (>>= loReduce) $ Just x
-
-eval :: String -> Either String TermL
-eval x = runInterpM ((asks maxSteps) >>= (evalWith x)) Map.empty stdCalculusSettings
-
 type Value = TermL
 
 class InterpC t where
@@ -301,3 +288,19 @@ instance InterpC TermA where
                else do
                  put $ Map.insert v t state
                  return t
+
+readExpr :: String -> InterpM LambdaCalculus
+readExpr input = case parse calculusParser "Lambda Calculus" input of
+  Left err -> throwError $ show err
+  Right x -> return x
+
+eval :: String -> Either String Value
+eval input = runInterpM (readExpr input >>= interp) Map.empty stdCalculusSettings
+
+-- REPL
+
+flushStr :: String -> IO ()
+flushStr str = putStr str >> hFlush stdout
+
+readPrompt :: String -> IO String
+readPrompt prompt = flushStr prompt >> getLine

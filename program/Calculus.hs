@@ -27,4 +27,4 @@ class Eq a => Reducible a where
   runEval ev = runIdentity . runErrorT . runReaderT ev
 
   eval :: a -> Either String a
-  eval x = runEval ((asks maxSteps) >>= (evalWith x)) stdCalculusSettings
+  eval x = runEval (asks maxSteps >>= evalWith x) stdCalculusSettings
