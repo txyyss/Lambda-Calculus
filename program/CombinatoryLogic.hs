@@ -6,7 +6,7 @@ import Text.Parsec.Language (emptyDef)
 import Text.Parsec.String (Parser)
 import Data.List (union, nub, intersperse)
 import Calculus
-import qualified PureLambda as P
+import qualified PureLambda as P (parseLambda', TermL(Var, App, Abs))
 import Test.QuickCheck
 import Control.Monad (liftM, liftM2)
 import Control.Applicative((<*))
@@ -108,7 +108,7 @@ abstraction x m
         helper (App u v) = absApp u v
         absApp u v = App (App (Atom "S") (abstraction x u)) (abstraction x v)
 
-lambdaToCL :: P.Term -> Term
+lambdaToCL :: P.TermL -> Term
 lambdaToCL (P.Var x) = Var x
 lambdaToCL (P.App m n) = App (lambdaToCL m) (lambdaToCL n)
 lambdaToCL (P.Abs x m) = abstraction x (lambdaToCL m)

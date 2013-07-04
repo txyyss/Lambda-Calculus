@@ -18,37 +18,18 @@ import Control.Applicative((<*))
 data CalculusSettings = CalculusSettings {maxSteps :: Int -> Int}
 
 type Ide = String
-data Term = Var Ide | App Term Term | Abs Ide Term deriving Eq
-data LambdaCalculus = Asg Ide Term | Expr Term deriving Eq
-
-type LambdaState = Map.Map Ide Term
+data TermL = Var Ide | App TermL TermL | Abs Ide TermL deriving Eq -- lambda term
+data TermA = Asg Ide TermL deriving Eq                             -- assignment term
+type LambdaCalculus = Either TermL TermA
+type LambdaState = Map.Map Ide TermL
 
 stdCalculusSettings = CalculusSettings {maxSteps = (* 10)}
-
-type Eval a = StateT LambdaState (ReaderT CalculusSettings (ErrorT String Identity)) a
-
-runEval :: Eval a -> LambdaState -> CalculusSettings -> Either String a
-runEval ev st = runIdentity . runErrorT . runReaderT (evalStateT ev st) 
-
-evalWith :: String -> (Int -> Int) -> Eval Term
-evalWith input stepFunc =
-  case parseLambda input of
-    Left err -> throwError err
-    Right x -> helper x stepFunc
-      where helper x stepFun
-              | length trace < steps = return $ fromJust $ last trace
-              | otherwise = throwError "Can't be reduced!"
-              where steps = stepFun $ lgh x
-                    trace = take steps . takeWhile (/=Nothing) . iterate (>>= loReduce) $ Just x
-
-eval :: String -> Either String Term
-eval x = runEval ((asks maxSteps) >>= (evalWith x)) Map.empty stdCalculusSettings
 
 absOpr = "."
 absHead = "\\"
 appOpr = " "
 
-fullForm :: Term -> String
+fullForm :: TermL -> String
 fullForm (Var x) = x
 fullForm (Abs x (Var y)) = absHead ++ x ++ absOpr ++ y
 fullForm (Abs x y) = absHead ++ x ++ absOpr ++ "(" ++ fullForm y ++ ")"
@@ -56,7 +37,7 @@ fullForm (App x y) = helper x ++ appOpr ++ helper y
   where helper (Var a) = a
         helper a = "(" ++ fullForm a ++ ")"
 
-simpleForm :: Term -> String
+simpleForm :: TermL -> String
 simpleForm (Var x) = x
 simpleForm (Abs x (Var y)) = absHead ++ x ++ absOpr ++ y
 simpleForm (Abs x y) = absHead ++ x ++ absOpr ++ simpleForm y
@@ -69,12 +50,11 @@ simpleForm (App x y) = helper1 x ++ appOpr ++ helper2 y False
         helper2 a@(Abs _ _) True = "(" ++ simpleForm a ++ ")"
         helper2 a _ = "(" ++ simpleForm a ++ ")"
 
-instance Show Term where
+instance Show TermL where
   show = simpleForm
 
-instance Show LambdaCalculus where
+instance Show TermA where
   show (Asg id t) = id ++ " = " ++ show t
-  show (Expr t) = show t
 
 -- Grammar is:
 -- var = letter, { letter | digit | "_" };
@@ -98,16 +78,16 @@ identifier = T.identifier lexer
 reservedOp = T.reservedOp lexer
 
 -- Parser
-varParser :: Parser Term
+varParser :: Parser TermL
 varParser = liftM Var identifier
 
-termParser :: Parser Term
+termParser :: Parser TermL
 termParser = do
-  ls <- many1 chainTermParser
+  ls <- many1 chainTermLParser
   return $ foldl1 App ls
 
-chainTermParser :: Parser Term
-chainTermParser = varParser <|> parens termParser <|>
+chainTermLParser :: Parser TermL
+chainTermLParser = varParser <|> parens termParser <|>
                   do
                     symbol "\\"
                     m <- identifier
@@ -115,7 +95,7 @@ chainTermParser = varParser <|> parens termParser <|>
                     t <- termParser
                     return $ Abs m t
 
-assignmentParser :: Parser LambdaCalculus
+assignmentParser :: Parser TermA
 assignmentParser = do
   m <- identifier
   reservedOp "="
@@ -123,41 +103,55 @@ assignmentParser = do
   return $ Asg m t
 
 lambdaCalculusParser :: Parser LambdaCalculus
-lambdaCalculusParser = try assignmentParser <|> (liftM Expr termParser)
+lambdaCalculusParser = try (liftM Right assignmentParser) <|> (liftM Left termParser)
 
-lambdaParser :: Parser Term
+calculusParser :: Parser LambdaCalculus
+calculusParser = whiteSpace >> lambdaCalculusParser <* eof
+
+lambdaParser :: Parser TermL
 lambdaParser = whiteSpace >> termParser <* eof
 
-parseLambda' :: String -> Term
+parseLambda' :: String -> TermL
 parseLambda' = helper . runParser lambdaParser () ""
   where helper (Left err) = error $ show err
         helper (Right x) = x
 
-parseLambda :: String -> Either String Term
+parseLambda :: String -> Either String TermL
 parseLambda = helper . runParser lambdaParser () ""
   where helper (Left err) = Left $ show err
         helper (Right x) = Right x
 
+parseCalculus :: String -> Either String LambdaCalculus
+parseCalculus = helper . runParser calculusParser () ""
+  where helper (Left err) = Left $ show err
+        helper (Right x) = Right x
+
+parseCalculus' :: String -> LambdaCalculus
+parseCalculus' = helper . runParser calculusParser () ""
+  where helper (Left err) = error $ show err
+        helper (Right x) = x
+
+
 -- Theory part
 
-freeVars :: Term -> [Ide]
-freeVars (Var x) = [x]
+freeVars :: TermL -> [Ide]
+freeVars (Var x)     = [x]
 freeVars (App t1 t2) = freeVars t1 `union` freeVars t2
-freeVars (Abs x t) = delete x $ freeVars t
+freeVars (Abs x t)   = delete x $ freeVars t
 
-isClosed :: Term -> Bool
+isClosed :: TermL -> Bool
 isClosed = null . freeVars
 
-subst :: Term -> Ide -> Term -> Term
+subst :: TermL -> Ide -> TermL -> TermL
 subst n x m@(Var y)
-  | x == y = n
+  | x == y    = n
   | otherwise = m
 subst n x (App p q) = App (subst n x p) (subst n x q)
 subst n x m@(Abs y p)
-  | x == y = m
+  | x == y            = m
   | x `notElem` freeP = m
   | y `notElem` freeN = Abs y (subst n x p)
-  | otherwise = Abs z $ subst n x $ subst (Var z) y p
+  | otherwise         = Abs z $ subst n x $ subst (Var z) y p
   where freeP = freeVars p
         freeN = freeVars n
         freeNP = freeP `union` freeN
@@ -172,7 +166,7 @@ allWords = concat $ iterate addPrefix initVars
         initVars = map (: []) alphabet
         alphabet = ['a'..'z']
 
-alphaCongruent :: Term -> Term -> Bool
+alphaCongruent :: TermL -> TermL -> Bool
 alphaCongruent (Var x) (Var y) = x == y
 alphaCongruent (App x1 y1) (App x2 y2) = alphaCongruent x1 x2 && alphaCongruent y1 y2
 alphaCongruent (Abs x tx) (Abs y ty)
@@ -180,9 +174,9 @@ alphaCongruent (Abs x tx) (Abs y ty)
   | otherwise = alphaCongruent (subst (Var z) x tx) (subst (Var z) y ty)
   where z = genNewIde $ freeVars tx `union` freeVars ty
 
--- Leftmost Outmost Reduce
+-- Reduce code
 
-loReduce (Var _) = Nothing
+loReduce (Var _) = Nothing -- Leftmost Outmost Reduce
 loReduce (Abs x t'@(App t (Var y)))
   | x == y && (x `notElem` freeVars t) = Just t --eta conversion
   | otherwise =
@@ -206,10 +200,32 @@ lgh (Var _) = 1
 lgh (App t1 t2) = lgh t1 + lgh t2
 lgh (Abs _ t) = 1 + lgh t
 
+limitedReduce :: (Int -> Int) -> TermL -> Maybe TermL
+limitedReduce stepFunc x
+  | length trace < steps = last trace
+  | otherwise            = Nothing
+  where steps = stepFunc $ lgh x
+        trace = take steps . takeWhile (/=Nothing) . iterate (>>= loReduce) $ Just x
+
+exhaustedIterate :: Eq a => (a -> a) -> a -> a
+exhaustedIterate f x = helper trace
+  where trace = iterate f x
+        helper (x:xs@(y:_))
+          | x == y = x
+          | otherwise = helper xs
+
+replaceFreeVars :: LambdaState -> TermL -> TermL
+replaceFreeVars state x = exhaustedIterate (helper []) x
+  where helper scope v@(Var x)
+          | x `elem` scope || Map.notMember x state = v
+          | otherwise = state Map.! x
+        helper scope (App f p) = App (helper scope f) (helper scope p)
+        helper scope (Abs x t) = Abs x (helper (x:scope) t)
+
 cSucc = parseLambda' "\\n.\\f.\\x.f (n f x)"
 cPlus = parseLambda' "\\m.\\n.\\f.\\x.m f (n f x)"
 
-churchNumeral :: Int -> Term
+churchNumeral :: Int -> TermL
 churchNumeral n = Abs "f" (Abs "x" result)
   where result = helper (App (Var "f")) n (Var "x")
         helper f 0 x = x
@@ -217,17 +233,71 @@ churchNumeral n = Abs "f" (Abs "x" result)
 
 -- Test code
 
-instance Arbitrary Term where
-  arbitrary = sized arbTerm
+instance Arbitrary TermL where
+  arbitrary = sized arbTermL
     where arbChar = elements ['a'..'z']
-          arbTerm 0 = liftM (Var . (:[])) arbChar
-          arbTerm 1 = arbTerm 0
-          arbTerm n = oneof [liftM2 Abs (liftM (:[]) arbChar) (arbTerm (n-1)),
-                     liftM2 App (arbTerm nd2) (arbTerm (n - nd2))]
+          arbTermL 0 = liftM (Var . (:[])) arbChar
+          arbTermL 1 = arbTermL 0
+          arbTermL n = oneof [liftM2 Abs (liftM (:[]) arbChar) (arbTermL (n-1)),
+                     liftM2 App (arbTermL nd2) (arbTermL (n - nd2))]
             where nd2 = n `div` 2
 
-propParse :: Term -> Property
+propParse :: TermL -> Property
 propParse t = classify (lgh t <= 5) "trivial"
                   (parseLambda' str == t &&
                    simpleForm (parseLambda' str) == str)
   where str = show t
+
+-- evaluation code
+
+type InterpM = StateT LambdaState (ReaderT CalculusSettings (ErrorT String Identity))
+
+runInterpM :: InterpM a -> LambdaState -> CalculusSettings -> Either String a
+runInterpM ev st = runIdentity . runErrorT . runReaderT (evalStateT ev st) 
+
+evalWith :: String -> (Int -> Int) -> InterpM TermL
+evalWith input stepFunc =
+  case parseLambda input of
+    Left err -> throwError err
+    Right x -> helper x stepFunc
+      where helper x stepFun
+              | length trace < steps = return $ fromJust $ last trace
+              | otherwise = throwError "Can't be reduced!"
+              where steps = stepFun $ lgh x
+                    trace = take steps . takeWhile (/=Nothing) . iterate (>>= loReduce) $ Just x
+
+eval :: String -> Either String TermL
+eval x = runInterpM ((asks maxSteps) >>= (evalWith x)) Map.empty stdCalculusSettings
+
+type Value = TermL
+
+class InterpC t where
+  interp :: t -> InterpM Value
+
+instance (InterpC t1, InterpC t2) => InterpC (Either t1 t2) where
+  interp (Left x)  = interp x
+  interp (Right x) = interp x
+
+instance InterpC TermL where
+  interp input = do
+    state <- get
+    let replacedInput = replaceFreeVars state input
+    stepF <- asks maxSteps
+    case limitedReduce stepF replacedInput of
+      Just x -> return x
+      Nothing -> throwError (show input ++ " can't be reduced!")
+
+instance InterpC TermA where
+  interp (Asg v t) = do
+    state <- get
+    if Map.member v state
+      then throwError (v ++ " has been defined already!")
+      else do
+        let freeVs = freeVars t
+        if v `elem` freeVs
+          then throwError (v ++ " is recursively defined!")
+          else if any (`Map.notMember` state) freeVs
+               then throwError (show t ++ " contains free variables")
+               else do
+                 put $ Map.insert v t state
+                 return t
