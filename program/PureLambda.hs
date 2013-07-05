@@ -24,7 +24,7 @@ data TermA = Asg Ide TermL deriving Eq                             -- assignment
 type LambdaCalculus = Either TermL TermA
 type LambdaState = Map.Map Ide TermL
 
-stdCalculusSettings = CalculusSettings {maxSteps = (* 10)}
+stdCalculusSettings = CalculusSettings {maxSteps = (* 1000)}
 
 absOpr = "."
 absHead = "\\"
@@ -317,8 +317,8 @@ continueEval state input =
     Left err -> (err, state)
     Right (v, newS) -> (show v, newS)
 
-runREPL :: LambdaState -> IO ()
-runREPL state = do
+runREPLWith :: LambdaState -> IO ()
+runREPLWith state = do
   input <- readPrompt "Lambda> "
   if (input == ":q")
     then return ()
@@ -326,4 +326,40 @@ runREPL state = do
       do
         let (result, newS) = continueEval state input
         putStrLn result
-        runREPL newS
+        runREPLWith newS
+
+-- sample definitions
+
+stdDefinition = ["zero = \\f.\\x.x",
+                 "succ = \\n.\\f.\\x.f (n f x)",
+                 "plus = \\m.\\n.m succ n",
+                 "mult = \\m.\\n.\\f.m (n f)",
+                 "pow = \\b.\\e.e b",
+                 "pred = \\n.\\f.\\x.n (\\g.\\h.h (g f)) (\\u.x) (\\u.u)",
+                 "sub = \\m.\\n.n pred m",
+
+                 "one = succ zero",
+                 "two = succ one",
+                 "three = succ two",
+                 "four = succ three",
+
+                 "true = \\x.\\y.x",
+                 "false = \\x.\\y.y",
+                 "and = \\p.\\q.p q p",
+                 "or = \\p.\\q.p p q",
+                 "not = \\p.\\a.\\b.p b a",
+                 "if = \\p.\\a.\\b.p a b",
+                 "iszero = \\n.n (\\x.false) true",
+                 "leq = \\m.\\n.iszero (sub m n)",
+                 "eq = \\m.\\n. and (leq m n) (leq n m)",
+
+                 "Yv = \\h. (\\x.\\a.h (x x) a) (\\x.\\a.h (x x) a)",
+                 "Y = \\g.(\\x.g (x x)) (\\x.g (x x))",
+                 "fracG = \\r.\\n.if (iszero n) one (mult n (r (pred n)))"
+                 ]
+
+stdState :: LambdaState
+stdState = helper $ runInterpM stdCalculusSettings Map.empty $ foldl1 (>>) $ map interpStr stdDefinition
+  where helper (Right (_, x)) = x
+
+runREPL = runREPLWith stdState
