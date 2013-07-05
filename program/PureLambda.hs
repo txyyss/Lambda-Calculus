@@ -66,17 +66,17 @@ instance Show TermA where
 
 
 -- Lexer
-pureLambdaDef = emptyDef {T.reservedOpNames = ["="]}
+-- pureLambdaDef = emptyDef {T.reservedOpNames = ["=",".","\\"]}
   
 lexer :: T.TokenParser ()
-lexer = T.makeTokenParser pureLambdaDef
+lexer = T.makeTokenParser emptyDef
 
 whiteSpace = T.whiteSpace lexer
 lexeme     = T.lexeme lexer
-symbol     = T.symbol lexer
 parens     = T.parens lexer
 identifier = T.identifier lexer
-reservedOp = T.reservedOp lexer
+symbol     = T.symbol lexer
+-- reservedOp = T.reservedOp lexer
 
 -- Parser
 varParser :: Parser TermL
@@ -99,7 +99,7 @@ chainTermLParser = varParser <|> parens termParser <|>
 assignmentParser :: Parser TermA
 assignmentParser = do
   m <- identifier
-  reservedOp "="
+  symbol "="
   t <- termParser
   return $ Asg m t
 
@@ -253,8 +253,8 @@ propParse t = classify (lgh t <= 5) "trivial"
 
 type InterpM = StateT LambdaState (ReaderT CalculusSettings (ErrorT String Identity))
 
-runInterpM :: InterpM a -> LambdaState -> CalculusSettings -> Either String a
-runInterpM ev st = runIdentity . runErrorT . runReaderT (evalStateT ev st) 
+runInterpM :: CalculusSettings -> LambdaState -> InterpM a -> Either String (a, LambdaState)
+runInterpM settings state x = runIdentity . runErrorT $ runReaderT (runStateT x state) settings
 
 type Value = TermL
 
@@ -294,8 +294,14 @@ readExpr input = case parse calculusParser "Lambda Calculus" input of
   Left err -> throwError $ show err
   Right x -> return x
 
-eval :: String -> Either String Value
-eval input = runInterpM (readExpr input >>= interp) Map.empty stdCalculusSettings
+interpStr :: String -> InterpM Value
+interpStr input = readExpr input >>= interp  
+
+evalOnce :: String -> Either String (Value, LambdaState)
+evalOnce input = runInterpM stdCalculusSettings Map.empty (interpStr input)
+
+evalString :: LambdaState -> String ->  Either String (Value, LambdaState)
+evalString state input = runInterpM stdCalculusSettings state (interpStr input)
 
 -- REPL
 
@@ -304,3 +310,20 @@ flushStr str = putStr str >> hFlush stdout
 
 readPrompt :: String -> IO String
 readPrompt prompt = flushStr prompt >> getLine
+
+continueEval :: LambdaState -> String -> (String, LambdaState)
+continueEval state input =
+  case evalString state input of
+    Left err -> (err, state)
+    Right (v, newS) -> (show v, newS)
+
+runREPL :: LambdaState -> IO ()
+runREPL state = do
+  input <- readPrompt "Lambda> "
+  if (input == ":q")
+    then return ()
+    else
+      do
+        let (result, newS) = continueEval state input
+        putStrLn result
+        runREPL newS
