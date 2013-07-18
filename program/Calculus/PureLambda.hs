@@ -1,4 +1,4 @@
-module PureLambda
+module Calculus.PureLambda
        (Ide, TermL(..), TermA(..), LambdaCalculus, lgh, LambdaState,
         replaceFreeVars, limitedReduce, freeVars) where
 

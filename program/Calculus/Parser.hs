@@ -1,6 +1,6 @@
-module Parser (parseCalculus) where
+module Calculus.Parser (parseCalculus) where
 
-import PureLambda (Ide, TermL(..), TermA(..), LambdaCalculus, lgh)
+import Calculus.PureLambda (Ide, TermL(..), TermA(..), LambdaCalculus, lgh)
 import Text.Parsec
 import qualified Text.Parsec.Token as T
 import Text.Parsec.Language (emptyDef)

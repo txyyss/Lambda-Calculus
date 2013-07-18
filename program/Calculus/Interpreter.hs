@@ -1,7 +1,7 @@
-module Interpreter where
+module Calculus.Interpreter where
 
-import Parser
-import PureLambda
+import Calculus.Parser
+import Calculus.PureLambda
 import qualified Data.Map as Map
 import Control.Monad (unless)
 import Control.Monad.Identity
