@@ -8,7 +8,7 @@ import Text.Parsec.String (Parser)
 import Data.List (union, delete)
 import Test.QuickCheck
 import Data.Maybe (fromJust)
-import Control.Monad (liftM, liftM2)
+import Control.Monad (liftM, liftM2,unless)
 import Control.Monad.Identity
 import Control.Monad.Error
 import Control.Monad.Reader
@@ -320,13 +320,11 @@ continueEval state input =
 runREPLWith :: LambdaState -> IO ()
 runREPLWith state = do
   input <- readPrompt "Lambda> "
-  if (input == ":q")
-    then return ()
-    else
-      do
-        let (result, newS) = continueEval state input
-        putStrLn result
-        runREPLWith newS
+  unless (input == ":q") $
+    do
+      let (result, newS) = continueEval state input
+      putStrLn result
+      runREPLWith newS
 
 -- sample definitions
 
