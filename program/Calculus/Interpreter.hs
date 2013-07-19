@@ -36,8 +36,9 @@ instance InterpC TermL where
     let replacedInput = replaceFreeVars state input
     stepF <- asks maxSteps
     case limitedReduce stepF replacedInput of
-      Just x -> return x
-      Nothing -> throwError (show input ++ " can't be reduced!")
+      [] -> throwError (show input ++ " can't be reduced!")
+      x -> return $ last x
+      
 
 instance InterpC TermA where
   interp (Asg v t) = do

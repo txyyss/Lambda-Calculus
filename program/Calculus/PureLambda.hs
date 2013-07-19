@@ -13,6 +13,7 @@ module Calculus.PureLambda
 
 import qualified Data.Map as Map
 import Data.List (union, delete)
+import Data.Maybe (fromJust)
 
 type Ide            = String
 data TermL          = Var Ide | App TermL TermL | Abs Ide TermL deriving Eq -- lambda term
@@ -123,10 +124,10 @@ lgh (Var _)     = 1
 lgh (App t1 t2) = lgh t1 + lgh t2
 lgh (Abs _ t)   = 1 + lgh t
 
-limitedReduce :: (Int -> Int) -> TermL -> Maybe TermL
+limitedReduce :: (Int -> Int) -> TermL -> [TermL]
 limitedReduce stepFunc x
-  | length trace < steps = last trace
-  | otherwise            = Nothing
+  | length trace < steps = map fromJust trace
+  | otherwise            = []
   where steps            = stepFunc $ lgh x
         trace            = take steps . takeWhile (/=Nothing) . iterate (>>= loReduce) $ Just x
 
