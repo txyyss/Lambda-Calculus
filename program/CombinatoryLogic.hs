@@ -6,9 +6,10 @@ import Text.Parsec.Language (emptyDef)
 import Text.Parsec.String (Parser)
 import Data.List (union, nub, intersperse)
 import Calculus
-import qualified PureLambda as P
+import qualified PureLambda as P (parseLambda', TermL(Var, App, Abs))
 import Test.QuickCheck
 import Control.Monad (liftM, liftM2)
+import Control.Applicative((<*))
 
 type Ide = String
 data Term = Var Ide | Atom Ide | App Term Term deriving Eq
@@ -57,7 +58,7 @@ chainTermParser = atomParser "S" <|>
                   parens termParser
 
 clParser :: Parser Term
-clParser = whiteSpace >> termParser
+clParser = whiteSpace >> termParser <* eof
 
 parseCL :: String -> Term
 parseCL = helper . runParser clParser () ""
@@ -107,7 +108,7 @@ abstraction x m
         helper (App u v) = absApp u v
         absApp u v = App (App (Atom "S") (abstraction x u)) (abstraction x v)
 
-lambdaToCL :: P.Term -> Term
+lambdaToCL :: P.TermL -> Term
 lambdaToCL (P.Var x) = Var x
 lambdaToCL (P.App m n) = App (lambdaToCL m) (lambdaToCL n)
 lambdaToCL (P.Abs x m) = abstraction x (lambdaToCL m)
@@ -137,6 +138,6 @@ propLambdaToCL (TestLToCL s) = show (eval $ parseCL clExpr) == "Right " ++ expr
   where expr = intersperse ' ' s
         absExpr = nub s
         lambdaExpr = concatMap (\x -> "\\"++[x]++".") absExpr ++ " " ++ expr
-        clExpr = show (lambdaToCL $ P.parseLambda lambdaExpr) ++ " " ++ intersperse ' ' absExpr
+        clExpr = show (lambdaToCL $ P.parseLambda' lambdaExpr) ++ " " ++ intersperse ' ' absExpr
 
 -- quickCheckWith stdArgs{maxSize=30} propLambdaToCL
