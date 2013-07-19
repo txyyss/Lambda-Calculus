@@ -6,20 +6,22 @@ import qualified Data.Map as Map
 import Control.Monad (unless)
 import Control.Monad.Identity
 import Control.Monad.Error
-import Control.Monad.Reader
 import Control.Monad.State
 import System.IO
 
-data CalculusSettings = CalculusSettings {maxSteps :: Int -> Int}
+data CalculusSettings = CalculusSettings {
+  maxSteps :: Int -> Int,
+  traceEnabled :: Bool,
+  simpleFormEnabled :: Bool}
 
-stdCalculusSettings = CalculusSettings {maxSteps = (* 1000)}
+stdCalculusSettings = CalculusSettings {maxSteps = (* 1000), traceEnabled = False, simpleFormEnabled = True}
 
 -- evaluation code
 
-type InterpM = StateT LambdaState (ReaderT CalculusSettings (ErrorT String Identity))
+type InterpM = StateT (LambdaState, CalculusSettings) (ErrorT String Identity)
 
-runInterpM :: CalculusSettings -> LambdaState -> InterpM a -> Either String (a, LambdaState)
-runInterpM settings state x = runIdentity . runErrorT $ runReaderT (runStateT x state) settings
+runInterpM :: (LambdaState, CalculusSettings) -> InterpM a -> Either String (a, (LambdaState, CalculusSettings))
+runInterpM gState x = runIdentity . runErrorT $ runStateT x gState
 
 type Value = TermL
 
@@ -32,17 +34,15 @@ instance (InterpC t1, InterpC t2) => InterpC (Either t1 t2) where
 
 instance InterpC TermL where
   interp input = do
-    state <- get
+    (state, settings) <- get
     let replacedInput = replaceFreeVars state input
-    stepF <- asks maxSteps
-    case limitedReduce stepF replacedInput of
+    case limitedReduce (maxSteps settings) replacedInput of
       [] -> throwError (show input ++ " can't be reduced!")
       x -> return $ last x
-      
 
 instance InterpC TermA where
   interp (Asg v t) = do
-    state <- get
+    (state,settings) <- get
     if Map.member v state
       then throwError (v ++ " has been defined already!")
       else do
@@ -52,7 +52,7 @@ instance InterpC TermA where
           else if any (`Map.notMember` state) freeVs
                then throwError (show t ++ " contains free variables")
                else do
-                 put $ Map.insert v t state
+                 put $ (Map.insert v t state, settings)
                  return t
 
 readExpr :: String -> InterpM LambdaCalculus
@@ -63,11 +63,11 @@ readExpr input = case parseCalculus input of
 interpStr :: String -> InterpM Value
 interpStr input = readExpr input >>= interp  
 
-evalOnce :: String -> Either String (Value, LambdaState)
-evalOnce input = runInterpM stdCalculusSettings Map.empty (interpStr input)
+evalOnce :: String -> Either String (Value, (LambdaState, CalculusSettings))
+evalOnce input = runInterpM (Map.empty, stdCalculusSettings) (interpStr input)
 
-evalString :: LambdaState -> String ->  Either String (Value, LambdaState)
-evalString state input = runInterpM stdCalculusSettings state (interpStr input)
+evalString :: (LambdaState, CalculusSettings) -> String ->  Either String (Value, (LambdaState, CalculusSettings))
+evalString state input = runInterpM state (interpStr input)
 
 -- REPL
 
@@ -77,13 +77,13 @@ flushStr str = putStr str >> hFlush stdout
 readPrompt :: String -> IO String
 readPrompt prompt = flushStr prompt >> getLine
 
-continueEval :: LambdaState -> String -> (String, LambdaState)
-continueEval state input =
+continueEval :: (LambdaState, CalculusSettings) -> String -> (String, (LambdaState, CalculusSettings))
+continueEval state@(_, setting) input =
   case evalString state input of
     Left err -> (err, state)
-    Right (v, newS) -> (show v, newS)
+    Right (v, newS) -> (if (simpleFormEnabled setting) then simpleForm v else fullForm v, newS)
 
-runREPLWith :: LambdaState -> IO ()
+runREPLWith :: (LambdaState, CalculusSettings) -> IO ()
 runREPLWith state = do
   input <- readPrompt "Lambda> "
   unless (input == ":q") $
@@ -122,8 +122,8 @@ stdDefinition = ["zero = \\f.\\x.x",
                  "fracG = \\r.\\n.if (iszero n) one (mult n (r (pred n)))"
                  ]
 
-stdState :: LambdaState
-stdState = helper $ runInterpM stdCalculusSettings Map.empty $ foldl1 (>>) $ map interpStr stdDefinition
+stdState :: (LambdaState, CalculusSettings)
+stdState = helper $ runInterpM (Map.empty,stdCalculusSettings) $ foldl1 (>>) $ map interpStr stdDefinition
   where helper (Right (_, x)) = x
 
 runREPL = runREPLWith stdState
