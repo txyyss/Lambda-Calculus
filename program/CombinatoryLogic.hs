@@ -6,7 +6,8 @@ import Text.Parsec.Language (emptyDef)
 import Text.Parsec.String (Parser)
 import Data.List (union, nub, intersperse)
 import Calculus
-import qualified PureLambda as P (parseLambda', TermL(Var, App, Abs))
+import qualified Calculus.PureLambda as P (TermL(..))
+import Calculus.Parser (parseLambda')
 import Test.QuickCheck
 import Control.Monad (liftM, liftM2)
 import Control.Applicative((<*))
@@ -138,6 +139,6 @@ propLambdaToCL (TestLToCL s) = show (eval $ parseCL clExpr) == "Right " ++ expr
   where expr = intersperse ' ' s
         absExpr = nub s
         lambdaExpr = concatMap (\x -> "\\"++[x]++".") absExpr ++ " " ++ expr
-        clExpr = show (lambdaToCL $ P.parseLambda' lambdaExpr) ++ " " ++ intersperse ' ' absExpr
+        clExpr = show (lambdaToCL $ parseLambda' lambdaExpr) ++ " " ++ intersperse ' ' absExpr
 
 -- quickCheckWith stdArgs{maxSize=30} propLambdaToCL

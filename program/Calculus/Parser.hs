@@ -1,4 +1,4 @@
-module Calculus.Parser (parseCalculus) where
+module Calculus.Parser (parseCalculus, parseLambda') where
 
 import Calculus.PureLambda (Ide, TermL(..), TermA(..), LambdaCalculus, lgh, simpleForm, fullForm)
 import Text.Parsec
