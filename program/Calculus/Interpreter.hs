@@ -6,7 +6,8 @@ import Control.Monad (unless)
 import Control.Monad.Error
 import Control.Monad.Identity
 import Control.Monad.State
-import Data.List (intercalate)
+import Data.List (intercalate, isPrefixOf)
+import Data.Char (isDigit, digitToInt)
 import System.IO
 import qualified Data.Map as Map
 
@@ -15,7 +16,7 @@ data CalculusSettings = CalculusSettings {
   traceEnabled :: Bool,
   simpleFormEnabled :: Bool}
 
-stdCalculusSettings = CalculusSettings {maxSteps = (* 100), traceEnabled = False, simpleFormEnabled = False}
+stdCalculusSettings = CalculusSettings {maxSteps = (* 100), traceEnabled = False, simpleFormEnabled = True}
 
 type CalculusState = (LambdaState, CalculusSettings)
 
@@ -42,9 +43,9 @@ instance InterpC TermL where
     let replacedInput = replaceFreeVars state input
     let outputF = if simpleFormEnabled settings then simpleForm else fullForm
     case limitedReduce (maxSteps settings) replacedInput of
-      [] -> throwError (show input ++ "seems can't be reduced!")
+      [] -> throwError (show input ++ " seems can't be reduced!")
       x -> return $ Left (if traceEnabled settings
-                          then intercalate "\n" $ map (\t -> "==> " ++ (outputF t)) x
+                          then intercalate "\n" $ map (\t -> "==> " ++ outputF t) x
                           else outputF $ last x)
 
 instance InterpC TermA where
@@ -59,7 +60,7 @@ instance InterpC TermA where
           else if any (`Map.notMember` state) freeVs
                then throwError (show t ++ " contains free variables")
                else do
-                 put $ (Map.insert v t state, settings)
+                 put (Map.insert v t state, settings)
                  return $ Right ()
 
 readExpr :: String -> InterpM LambdaCalculus
@@ -67,8 +68,27 @@ readExpr input = case parseCalculus input of
   Left err -> throwError err
   Right x -> return x
 
+interpCommand :: String -> InterpM Value
+interpCommand cmd = do
+  (state, settings) <- get
+  if isPrefixOf "set steps " cmd && all isDigit (drop 10 cmd)
+    then do
+           let newMaxSteps = foldl1 (\x y -> x * 10 + y) $ map digitToInt $ drop 10 cmd
+           put (state, settings {maxSteps = (* newMaxSteps)})
+           return $ Right ()
+    else case cmd of
+           "set +trace" -> put (state, settings {traceEnabled = True}) >> return (Right ())
+           "set -trace" -> put (state, settings {traceEnabled = False}) >> return (Right ())
+           "set +fullform" -> put (state, settings {simpleFormEnabled = False}) >> return (Right ())
+           "set -fullform" -> put (state, settings {simpleFormEnabled = True}) >> return (Right ())
+           "clear state" -> put (Map.empty, settings) >> return (Right ())
+           "reset state" -> put (fst stdState, settings) >> return (Right ())
+           "reset settings" -> put (state, stdCalculusSettings) >> return (Right ())
+           _ -> throwError "Unrecognized command"
+    
 interpStr :: String -> InterpM Value
-interpStr input = readExpr input >>= interp  
+interpStr (':':cmd) = interpCommand cmd
+interpStr input = readExpr input >>= interp
 
 evalOnce :: String -> Either String (Value, CalculusState)
 evalOnce input = runInterpM (Map.empty, stdCalculusSettings) (interpStr input)
@@ -88,13 +108,12 @@ runREPLWith :: CalculusState -> IO ()
 runREPLWith state = do
   input <- readPrompt "Lambda> "
   unless (input == ":q") $
-    do
-      case evalString state input of
-        Left err -> putStrLn err >> runREPLWith state
-        Right (result, newS) ->
-          case result of
-            Left x -> putStrLn x >> runREPLWith newS
-            Right () -> runREPLWith newS
+    case evalString state input of
+      Left err -> putStrLn err >> runREPLWith state
+      Right (result, newS) ->
+        case result of
+          Left x -> putStrLn x >> runREPLWith newS
+          Right () -> runREPLWith newS
 
 -- sample definitions
 
