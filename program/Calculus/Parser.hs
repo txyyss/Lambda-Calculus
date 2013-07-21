@@ -18,7 +18,7 @@ import Control.Applicative((<*))
 
 
 -- Lexer
-  
+
 lexer :: T.TokenParser ()
 lexer = T.makeTokenParser emptyDef
 
