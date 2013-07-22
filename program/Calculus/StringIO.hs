@@ -1,6 +1,7 @@
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
 module Calculus.StringIO where
 
+import Control.Arrow (second)
 import Control.Monad.State
 
 quitCommand = ":q"
@@ -8,10 +9,6 @@ quitCommand = ":q"
 class (Monad m) => StringIO m where
   inputStr  :: m String
   outputStr :: String -> m ()
-
-instance StringIO IO where
-  inputStr = getLine
-  outputStr = putStrLn
 
 type MockIO = State ([String], [String])
 
@@ -21,7 +18,10 @@ instance StringIO MockIO where
     case input of
       (s:strs) -> put (strs, output) >> return s
       [] -> return quitCommand
-  outputStr s = modify $ \(input, output) -> (input, s:output)
+  outputStr s = modify $ second ((:) s)
 
-runMockIO :: [String] -> MockIO () -> [String]
-runMockIO input mockIO = reverse . snd $ execState mockIO (input, [])
+execMockIO :: [String] -> MockIO a -> [String]
+execMockIO input mockIO = reverse . snd $ execState mockIO (input, [])
+
+runMockIO :: [String] -> MockIO a -> (a, ([String], [String]))
+runMockIO input mockIO = runState mockIO (input, [])
