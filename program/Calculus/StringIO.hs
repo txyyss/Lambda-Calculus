@@ -9,10 +9,6 @@ class (Monad m) => StringIO m where
   inputStr  :: m String
   outputStr :: String -> m ()
 
-instance StringIO IO where
-  inputStr = getLine
-  outputStr = putStrLn
-
 type MockIO = State ([String], [String])
 
 instance StringIO MockIO where
@@ -23,5 +19,5 @@ instance StringIO MockIO where
       [] -> return quitCommand
   outputStr s = modify $ \(input, output) -> (input, s:output)
 
-runMockIO :: [String] -> MockIO () -> [String]
+runMockIO :: [String] -> MockIO a -> [String]
 runMockIO input mockIO = reverse . snd $ execState mockIO (input, [])
