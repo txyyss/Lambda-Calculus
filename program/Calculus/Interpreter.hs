@@ -1,4 +1,4 @@
-module Calculus.Interpreter where
+module Calculus.Interpreter (evalLambda, runREPL) where
 
 import Calculus.Parser
 import Calculus.PureLambda
@@ -152,6 +152,5 @@ stdState :: CalculusState
 stdState = helper . fst . runMockIO stdDefinition $ runInterpreterT (Map.empty, stdCalculusSettings) runLambda
   where helper (Right (_, x)) = x
 
-runREPL :: IO (Either String ((), CalculusState))
-runREPL = runInterpreterT stdState runLambda
-
+runREPL :: IO ()
+runREPL = runInterpreterT stdState runLambda >> return ()
