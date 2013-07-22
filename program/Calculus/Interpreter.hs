@@ -2,6 +2,7 @@ module Calculus.Interpreter where
 
 import Calculus.Parser
 import Calculus.PureLambda
+import Calculus.StringIO
 import Control.Monad (unless)
 import Control.Monad.Error
 import Control.Monad.Identity
@@ -107,7 +108,7 @@ readPrompt prompt = flushStr prompt >> getLine
 runREPLWith :: CalculusState -> IO ()
 runREPLWith state = do
   input <- readPrompt "Lambda> "
-  unless (input == ":q") $
+  unless (input == quitCommand) $
     case evalString state input of
       Left err             -> putStrLn err >> runREPLWith state
       Right (result, newS) ->
