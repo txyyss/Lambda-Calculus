@@ -29,11 +29,6 @@ type InterpreterT m = StateT CalculusState (ErrorT String m)
 runInterpreterT :: (Monad m) => CalculusState -> InterpreterT m a -> m (Either String (a, CalculusState))
 runInterpreterT state x = runErrorT $ runStateT x state
 
-type InterpM = StateT CalculusState (ErrorT String Identity)
-
-runInterpM :: CalculusState -> InterpM a -> Either String (a, CalculusState)
-runInterpM gState x = runIdentity . runErrorT $ runStateT x gState
-
 type Value = Either String ()
 
 class InterpC t where
@@ -96,37 +91,22 @@ interpStr :: (Monad m) => String -> InterpreterT m Value
 interpStr (':':cmd) = interpCommand cmd
 interpStr input     = readExpr input >>= interp
 
--- evalOnce :: String -> Either String (Value, CalculusState)
--- evalOnce input = runInterpM (Map.empty, stdCalculusSettings) (interpStr input)
-
-evalString :: CalculusState -> String ->  Either String (Value, CalculusState)
-evalString state input = runInterpM state (interpStr input)
-
 -- REPL
-
-evalOnce :: (StringIO m) => InterpreterT m ()
-evalOnce = do
-  input <- lift $ lift inputStr
-  value <- interpStr input
-  case value of
-    Left str -> lift $ lift (outputStr str)
-    Right () -> return ()
 
 runLambda :: (StringIO m) => InterpreterT m ()
 runLambda = do
   input <- lift $ lift inputStr
-  unless (input == quitCommand) $ do
-    value <- interpStr input
-    case value of
-      Left str -> lift $ lift (outputStr str)
-      Right () -> return ()
-    runLambda
-
-runREPL :: IO (Either String ((), CalculusState))
-runREPL = runInterpreterT (Map.empty, stdCalculusSettings) runLambda
-
+  unless (input == quitCommand) $ (
+    do
+      value <- interpStr input
+      case value of
+        Left str -> lift $ lift (outputStr str)
+        Right () -> return ()
+    `catchError` (lift . lift . outputStr))
+    >> runLambda
+    
 evalLambda :: [String] -> [String]
-evalLambda x = runMockIO x $ runInterpreterT (Map.empty, stdCalculusSettings) runLambda
+evalLambda x = execMockIO x $ runInterpreterT (Map.empty, stdCalculusSettings) runLambda
 
 flushStr :: String -> IO ()
 flushStr str = putStr str >> hFlush stdout
@@ -137,17 +117,6 @@ readPrompt prompt = flushStr prompt >> getLine
 instance StringIO IO where
   inputStr = readPrompt "Lambda> "
   outputStr = putStrLn
-
-runREPLWith :: CalculusState -> IO ()
-runREPLWith state = do
-  input <- readPrompt "Lambda> "
-  unless (input == quitCommand) $
-    case evalString state input of
-      Left err             -> putStrLn err >> runREPLWith state
-      Right (result, newS) ->
-        case result of
-          Left x   -> putStrLn x >> runREPLWith newS
-          Right () -> runREPLWith newS
 
 -- sample definitions
 
@@ -180,7 +149,9 @@ stdDefinition = ["zero   = \\f.\\x.x",
                  ]
 
 stdState :: CalculusState
-stdState = helper $ runInterpM (Map.empty,stdCalculusSettings) $ foldl1 (>>) $ map interpStr stdDefinition
+stdState = helper . fst . runMockIO stdDefinition $ runInterpreterT (Map.empty, stdCalculusSettings) runLambda
   where helper (Right (_, x)) = x
 
--- runREPL = runREPLWith stdState
+runREPL :: IO (Either String ((), CalculusState))
+runREPL = runInterpreterT stdState runLambda
+
