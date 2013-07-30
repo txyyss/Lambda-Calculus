@@ -15,10 +15,11 @@ import qualified Data.Map as Map
 data CalculusSettings = CalculusSettings {
   maxSteps          :: Int -> Int,
   traceEnabled      :: Bool,
-  simpleFormEnabled :: Bool
+  simpleFormEnabled :: Bool,
+  hold              :: Bool
   }
 
-stdCalculusSettings = CalculusSettings {maxSteps = (* 100), traceEnabled = False, simpleFormEnabled = True}
+stdCalculusSettings = CalculusSettings {maxSteps = (* 100), traceEnabled = False, simpleFormEnabled = True, hold = False}
 
 type CalculusState = (LambdaState, CalculusSettings)
 
@@ -43,7 +44,8 @@ instance InterpC TermL where
     (state, settings) <- get
     let replacedInput = replaceFreeVars state input
     let outputF       = if simpleFormEnabled settings then simpleForm else fullForm
-    case limitedReduce (maxSteps settings) replacedInput of
+    let evalF         = if hold settings then (\x y -> [y]) else limitedReduce
+    case evalF (maxSteps settings) replacedInput of
       [] -> throwError (show input ++ " seems can't be reduced!")
       x  -> return $ Left (if traceEnabled settings
                            then intercalate "\n" $ map (\t -> "==> " ++ outputF t) x
@@ -82,8 +84,10 @@ interpCommand cmd = do
            "reset settings" -> put (state, stdCalculusSettings)                  >> return (Right ())
            "reset state"    -> put (fst stdState, settings)                      >> return (Right ())
            "set +fullform"  -> put (state, settings {simpleFormEnabled = False}) >> return (Right ())
+           "set +hold"      -> put (state, settings {hold = True})               >> return (Right ())
            "set +trace"     -> put (state, settings {traceEnabled = True})       >> return (Right ())
            "set -fullform"  -> put (state, settings {simpleFormEnabled = True})  >> return (Right ())
+           "set -hold"      -> put (state, settings {hold = False})              >> return (Right ())
            "set -trace"     -> put (state, settings {traceEnabled = False})      >> return (Right ())
            _                -> throwError "Unrecognized command"
 
