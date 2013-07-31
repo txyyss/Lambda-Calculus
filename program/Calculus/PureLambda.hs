@@ -11,9 +11,10 @@ module Calculus.PureLambda
         replaceFreeVars,
         simpleForm) where
 
-import qualified Data.Map as Map
-import Data.List (union, delete)
 import Data.Maybe (fromJust)
+import Data.Set (Set)
+import qualified Data.Map as Map
+import qualified Data.Set as Set
 
 type Ide            = String
 data TermL          = Var Ide | App TermL TermL | Abs Ide TermL deriving Eq -- lambda term
@@ -54,13 +55,13 @@ instance Show TermA where
 
 -- Theory part
 
-freeVars :: TermL -> [Ide]
-freeVars (Var x)     = [x]
-freeVars (App t1 t2) = freeVars t1 `union` freeVars t2
-freeVars (Abs x t)   = delete x $ freeVars t
+freeVars :: TermL -> Set Ide
+freeVars (Var x)     = Set.singleton x
+freeVars (App t1 t2) = freeVars t1 `Set.union` freeVars t2
+freeVars (Abs x t)   = Set.delete x $ freeVars t
 
 isClosed :: TermL -> Bool
-isClosed = null . freeVars
+isClosed = Set.null . freeVars
 
 subst :: TermL -> Ide -> TermL -> TermL
 subst n x m@(Var y)
@@ -69,16 +70,16 @@ subst n x m@(Var y)
 subst n x (App p q)    = App (subst n x p) (subst n x q)
 subst n x m@(Abs y p)
   | x == y             = m
-  | x `notElem` freeP  = m
-  | y `notElem` freeN  = Abs y (subst n x p)
+  | x `Set.notMember` freeP  = m
+  | y `Set.notMember` freeN  = Abs y (subst n x p)
   | otherwise          = Abs z $ subst n x $ subst (Var z) y p
   where freeP          = freeVars p
         freeN          = freeVars n
-        freeNP         = freeP `union` freeN
+        freeNP         = freeP `Set.union` freeN
         z              = genNewIde freeNP
 
-genNewIde :: [Ide] -> Ide
-genNewIde ids = head $ filter (`notElem` ids) allWords
+genNewIde :: Set Ide -> Ide
+genNewIde ids = head $ filter (`Set.notMember` ids) allWords
 
 allWords :: [String]
 allWords            = concat $ iterate addPrefix initVars
@@ -92,7 +93,7 @@ alphaCongruent (App x1 y1) (App x2 y2)  = alphaCongruent x1 x2 && alphaCongruent
 alphaCongruent (Abs x tx) (Abs y ty)
   | x == y                              = alphaCongruent tx ty
   | otherwise                           = alphaCongruent (subst (Var z) x tx) (subst (Var z) y ty)
-  where z                               = genNewIde $ freeVars tx `union` freeVars ty
+  where z                               = genNewIde $ freeVars tx `Set.union` freeVars ty
 
 -- Reduce code
 
@@ -101,7 +102,7 @@ alphaCongruent (Abs x tx) (Abs y ty)
 loReduce :: TermL -> Maybe TermL
 loReduce (Var _) = Nothing
 loReduce (Abs x t'@(App t (Var y)))
-  | x == y && (x `notElem` freeVars t) = Just t --eta conversion
+  | x == y && (x `Set.notMember` freeVars t) = Just t --eta conversion
   | otherwise =
     case loReduce t' of
       Just t'' -> Just $ Abs x t''

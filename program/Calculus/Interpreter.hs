@@ -11,6 +11,7 @@ import Data.Char (isDigit, digitToInt)
 import Data.List (intercalate, isPrefixOf)
 import System.IO
 import qualified Data.Map as Map
+import qualified Data.Set as Set
 
 data CalculusSettings = CalculusSettings {
   maxSteps          :: Int -> Int,
@@ -58,9 +59,9 @@ instance InterpC TermA where
       then throwError (v ++ " has been defined already!")
       else do
         let freeVs = freeVars t
-        if v `elem` freeVs
+        if v `Set.member` freeVs
           then throwError (v ++ " is recursively defined!")
-          else if any (`Map.notMember` state) freeVs
+          else if Set.member True $ Set.map (`Map.notMember` state) freeVs
                then throwError (show t ++ " contains free variables")
                else do
                  put (Map.insert v t state, settings)
@@ -157,4 +158,4 @@ stdState = helper . fst . runMockIO stdDefinition $ runInterpreterT (Map.empty, 
   where helper (Right (_, x)) = x
 
 runREPL :: IO ()
-runREPL = runInterpreterT stdState runLambda >> return ()
+runREPL = void $ runInterpreterT stdState runLambda
