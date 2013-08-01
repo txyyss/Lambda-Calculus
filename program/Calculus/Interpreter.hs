@@ -109,7 +109,7 @@ runLambda = do
         Right () -> return ()
     `catchError` (lift . lift . outputStr))
     >> runLambda
-    
+
 evalLambda :: [String] -> [String]
 evalLambda x = execMockIO x $ runInterpreterT (Map.empty, stdCalculusSettings) runLambda
 

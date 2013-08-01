@@ -1,36 +1,36 @@
 \documentclass[a4paper,adobefonts]{ctexart}
-\usepackage{amsmath,amsthm,amssymb}
+\usepackage[a4paper,margin=2.5cm]{geometry}
 \usepackage[colorlinks=true,allcolors=black]{hyperref}
-\usepackage{indentfirst}
-\usepackage[a4paper,left=2.5cm,right=2.5cm,bottom=2.5cm,top=2.5cm]{geometry}
-\usepackage{graphicx}
-\usepackage{subcaption}
-\usepackage{url}
+\usepackage[svgnames]{xcolor}
+\usepackage{amsmath,amsthm,amssymb}
+\usepackage{fancyvrb,fancybox,calc}
 \usepackage{fontspec}
+\usepackage{graphicx}
+\usepackage{indentfirst}
+\usepackage{unicode-math}
+\usepackage{url}
+
 \setmainfont{Minion Pro}
-%% \setmonofont[Scale=MatchLowercase]{Source Code Pro}
 \setmonofont{Source Code Pro}
 \pagestyle{plain}
 \punctstyle{kaiming}
-\usepackage{unicode-math}
 \setmathfont{Asana Math}
 \graphicspath{{pic/}}
 
 \newcommand{\downloadurl}{\url{http://www.twitter.com}}
 
-\usepackage{fancyvrb,fancybox,calc} 
-\usepackage[svgnames]{xcolor} 
-\newenvironment{verbcode}{\VerbatimEnvironment% 
+\newenvironment{verbcode}{\VerbatimEnvironment%
   \noindent
   \begin{Sbox}
   \begin{minipage}{.96\textwidth}
   \begin{Verbatim}
-}{% 
-  \end{Verbatim}  
+}{%
+  \end{Verbatim}
   \end{minipage}
-  \end{Sbox} 
+  \end{Sbox}
   \begin{center}\colorbox{LightGray}{\TheSbox}\end{center}
-} 
+}
+
 \begin{document}
 \title{{\bfseries 让我们谈谈 $\lambda$ 演算}}
 \author{王盛颐\\\href{mailto:txyyss@gmail.com}{txyyss@gmail.com}}
@@ -104,7 +104,7 @@ $\lambda$ 演算之所以这么重要，用 Benjamin C. Pierce 的话说在于�
 让我们先从数学开始说起。函数是数学中一个非常基本的概念，我们很容易就能
 写出一个计算平方和的函数如下：
 \begin{equation}
-f(x,y) = x\times x + y\times y.  
+f(x,y) = x\times x + y\times y.
 \end{equation}
 上面这个平方和函数有个名字叫 $f$，有名字的好处是能方便的表示后续的计算，比如：
 $$
@@ -123,7 +123,7 @@ $$
 函数和多参数函数的区分有必要吗？可以换个角度来看，我们把
 (\ref{eqn:mapfun}) 改写成下面这个样子：
 \begin{equation}\label{eqn:highfun}
-x\mapsto(y\mapsto x\times x + y \times y).  
+x\mapsto(y\mapsto x\times x + y \times y).
 \end{equation}
 这个映射是什么意思呢？$x$ 被映射成了 $y\mapsto x\times x + y \times y$，
 后者是一个以 $y$ 为参数的函数。换句话说，(\ref{eqn:highfun}) 表示的是
