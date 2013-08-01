@@ -60,7 +60,7 @@ instance InterpC TermA where
       else do
         let freeVs = freeVars t
         if v `Set.member` freeVs
-          then throwError (v ++ " is recursively defined!")
+          then throwError (v ++ " can't be recursively defined!")
           else if Set.member True $ Set.map (`Map.notMember` state) freeVs
                then throwError (show t ++ " contains free variables")
                else do
@@ -158,4 +158,6 @@ stdState = helper . fst . runMockIO stdDefinition $ runInterpreterT (Map.empty, 
   where helper (Right (_, x)) = x
 
 runREPL :: IO ()
-runREPL = void $ runInterpreterT stdState runLambda
+runREPL = putStrLn "Lambda Interpreter Version 1.0" >>
+          putStrLn "Type \":q\" to quit." >>
+          void (runInterpreterT stdState runLambda)
