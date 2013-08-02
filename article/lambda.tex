@@ -31,6 +31,21 @@
   \begin{center}\colorbox{LightGray}{\TheSbox}\end{center}
 }
 
+\newenvironment{tightenum}{
+  \begin{enumerate}
+    \setlength{\itemsep}{0cm}
+    \setlength{\parskip}{0cm}
+    \setlength{\itemindent}{2\ccwd}
+}{
+  \end{enumerate}
+}
+
+\newtheorem{theorem}{定理}
+\theoremstyle{definition}
+\newtheorem{definition}{定义}
+\newtheorem{notation}{符号约定}
+\newtheorem{example}{示例}
+
 \begin{document}
 \title{{\bfseries 让我们谈谈 $\lambda$ 演算}}
 \author{王盛颐\\\href{mailto:txyyss@gmail.com}{txyyss@gmail.com}}
@@ -147,10 +162,90 @@ $$这样就清楚了，(\ref{eqn:highfun}) 同样可以进行平方和的计算�
 的，形式化的 $\lambda$ 演算。
 
 \subsection{形式化定义}\label{subsec:formal}
+\begin{definition}{\bfseries{($\lambda$ 项)}}\label{def:lambdaterm}
+  假设我们有一个无穷的字符串集合，里面的元素被称为\emph{变量}（和程序
+    语言中变量概念不同，这里就是指字符串本身）。那么 \emph{$\lambda$ 项}定义如下：
+  \begin{tightenum}
+  \item 所有的变量都是 $\lambda$ 项（名为\emph{原子}）；
+  \item 若 $M$ 和 $N$ 是 $\lambda$ 项，那么 $(M\,N)$ 也是 $\lambda$ 项
+    （名为\emph{应用}）
+  \item 若 $M$ 是 $\lambda$ 项而 $\phi$ 是一个变量，那么 $(\lambda\phi.M)$
+    也是 $\lambda$ 项（名为\emph{抽象}）。
+  \end{tightenum}
+\end{definition}
+
+上面定义的变量集合是可以任意指定的，比如在我写的解释器（见附录
+  \ref{sec:interpreter}）中，这个集合就是一般程序语言中可以用作变量名
+的字符串\footnote{就是以英文字母开头，后面跟着有限多个字母或数字的字符
+  串。}。在这篇文章里我们规定，变量集合是所有的小写英文字母及形如
+$x',x'',x'''\dots$ 的字符串。
+
+\begin{example}{\bfseries{（一些 $\lambda$ 项）}}
+下面这些都是 $\lambda$ 项：
+\begin{center}
+  \begin{tabular*}{.8\textwidth}{@{\extracolsep{\fill} }ccc}
+    $(\lambda x.(x\,y))$ & $(x(\lambda x.(\lambda x.x)))$ & $((((a\,b)\,c)\,d)\,e)$\\
+    $(((\lambda x.(\lambda y.(y\,x)))\,a)\,b)$ & $((\lambda y.y)\,(\lambda x.(x\,y)))$ & $(\lambda x.(y\,z))$
+  \end{tabular*}
+\end{center}
+\end{example}
+
+$\lambda$ 项是一种形式语言，换句话说，就是一类特殊形式的字符串罢了，没
+有任何内在的意义，只是个``形式''。通常情况下，当讨论一个形式语言的时候，
+我们需要用另一种元语言来指称形式语言里的元素。就如讨论自然数时，我们经
+常说``对任意自然数 $n$''，这里的 $n$ 本身并不是自然数，用来指称自然数
+罢了。我们也需要一些``$n$''来表示 $\lambda$ 项中的元素。因此，我们作如
+下符号约定：
+
+\begin{notation}
+  本文中我们用大写英文字母表示任意 $\lambda$ 项，用除 $\lambda$ 以外的
+  小写希腊字母如 $\phi$，$\psi$ 等表示任意 $\lambda$ 项中的变量。
+
+  对于括号，则有如下的省略规定：
+  \begin{tightenum}
+  \item $\lambda$ 项中最外层的括号可以省略，如 $(\lambda x.x)$ 可以省
+    略表示为 $\lambda x.x$；
+  \item 左结合的应用型的 $\lambda$ 项，如 $(((M\,N)\,P)\,Q)$，括号可
+    以省略，表示为 $M\,N\,P\,Q$；
+  \item 抽象型的 $\lambda$ 项 $(\lambda \phi.M)$ 中，$M$ 最外层的括号可以省略，
+    如 $\lambda x.(y\,z)$ 可以省略为 $\lambda x.y\,z$。
+  \end{tightenum}
+  也就是说，我们把省略形式视同定义 \ref{def:lambdaterm} 中的 $\lambda$ 项。
+\end{notation}
+
+\begin{example}{\bfseries{（省略表示）}}
+下面给出了一些省略表示的 $\lambda$ 项。
+\begin{center}
+  \begin{tabular*}{.7\textwidth}{@{\extracolsep{\fill} }ll}
+    省略表示 & 完整的 $\lambda$ 项\\
+    $\lambda x.\lambda y.y\,x\,a\,b$ & $(\lambda x.(\lambda y.(((y\,x)\,a)\,b)))$\\
+    $(\lambda x.\lambda y.y\,x)\,a\,b$ & $(((\lambda x.(\lambda y.(y\,x)))\,a)\,b)$\\
+    $\lambda g.(\lambda x.g\,(x\,x))\,\lambda x.g\,(x\,x)$ & $(\lambda g.((\lambda x.(g\,(x\,x)))\,(\lambda x.(g\,(x\,x)))))$\\
+    $\lambda x.\lambda y.a\,b\,\lambda z.z$ & $(\lambda x.(\lambda y.((a\,b)\,(\lambda z.z))))$\\
+  \end{tabular*}
+\end{center}
+\end{example}
+
+\begin{example}
+用 $\lambda$ 演算解释器可以方便的查看一个 $\lambda$ 项的省略表示和完整
+表示。解释器用字符 \verb|\| 代表 $\lambda$。（更多关于这个解释器的用法和
+各个命令的意义，请参考附录 \ref{sec:interpreter}。）
+\begin{verbcode}
+Lambda> :set +hold
+Lambda> (((\x.(\y.(y x))) a) b)
+(\x.\y.y x) a b
+Lambda> :set +fullform
+Lambda> (\x.\y.y x) a b
+(((\x.(\y.(y x))) a) b)
+\end{verbcode}
+\end{example}
+
+\subsection{替换}
+
 \newpage
 \appendix
 %% \section{\texorpdfstring{$\lambda$ 演算解释器简要使用说明}{$Lambda 演算解释器简要使用说明}}
-\section{解释器简要使用说明}
+\section{解释器简要使用说明}\label{sec:interpreter}
 
 在学习了解 $\lambda$ 演算的过程中，为了加深自己对 $\lambda$ 演算的感性
 认识，我实现了一个简单的解释器。这个解释器只实现了两个简单的功能：对无
@@ -175,7 +270,7 @@ Lambda> (\x.\y.y x) a b
 (\x.\y.y x) a b
 \end{verbcode}
 
-解释器默认的输出样式省略了不必要的括号，可以用命令
+解释器默认的输出样式采用了省略表示，去掉了不必要的括号，可以用命令
 \verb|:set +fullform| 和 \verb|:set -fullform| 控制是否输出全部带括号
 的结果。
 
@@ -184,9 +279,9 @@ Lambda> (a b) c d e f g
 a b c d e f g
 Lambda> :set +fullform
 Lambda> a b c d e f g
-(((((a b) c) d) e) f) g
+((((((a b) c) d) e) f) g)
 Lambda> \x.\y.y x a b
-\x.(\y.(((y x) a) b))
+(\x.(\y.(((y x) a) b)))
 \end{verbcode}
 
 解释器默认情况下，只输出最终的规约结果，可以用命令 \verb|:set +trace|
