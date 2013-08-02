@@ -28,11 +28,8 @@ appOpr  = " "
 
 fullForm :: TermL -> String
 fullForm (Var x)         = x
-fullForm (Abs x (Var y)) = absHead ++ x ++ absOpr ++ y
-fullForm (Abs x y)       = absHead ++ x ++ absOpr ++ "(" ++ fullForm y ++ ")"
-fullForm (App x y)       = helper x ++ appOpr ++ helper y
-  where helper (Var a)   = a
-        helper a         = "(" ++ fullForm a ++ ")"
+fullForm (Abs x y)       = "(" ++ absHead ++ x ++ absOpr ++ fullForm y ++ ")" 
+fullForm (App x y)       = "(" ++ fullForm x ++ appOpr ++ fullForm y ++ ")"
 
 simpleForm :: TermL -> String
 simpleForm (Var x)                = x
