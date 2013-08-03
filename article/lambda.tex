@@ -22,20 +22,20 @@
 \newenvironment{verbcode}{\VerbatimEnvironment%
   \noindent
   \begin{Sbox}
-  \begin{minipage}{.96\textwidth}
-  \begin{Verbatim}
+    \begin{minipage}{.96\textwidth}
+      \begin{Verbatim}
 }{%
-  \end{Verbatim}
-  \end{minipage}
+      \end{Verbatim}
+    \end{minipage}
   \end{Sbox}
   \begin{center}\colorbox{LightGray}{\TheSbox}\end{center}
 }
 
 \newenvironment{tightenum}{
   \begin{enumerate}
+    \setlength{\itemindent}{2\ccwd}
     \setlength{\itemsep}{0cm}
     \setlength{\parskip}{0cm}
-    \setlength{\itemindent}{2\ccwd}
 }{
   \end{enumerate}
 }
@@ -43,8 +43,8 @@
 \newtheorem{theorem}{定理}
 \theoremstyle{definition}
 \newtheorem{definition}{定义}
-\newtheorem{notation}{符号约定}
 \newtheorem{example}{示例}
+\newtheorem{notation}{符号约定}
 
 \begin{document}
 \title{{\bfseries 让我们谈谈 $\lambda$ 演算}}
@@ -119,7 +119,7 @@ $\lambda$ 演算之所以这么重要，用 Benjamin C. Pierce 的话说在于�
 让我们先从数学开始说起。函数是数学中一个非常基本的概念，我们很容易就能
 写出一个计算平方和的函数如下：
 \begin{equation}
-f(x,y) = x\times x + y\times y.
+  f(x,y) = x\times x + y\times y.
 \end{equation}
 上面这个平方和函数有个名字叫 $f$，有名字的好处是能方便的表示后续的计算，比如：
 $$
@@ -127,7 +127,7 @@ f(3,4) = 3\times 3 + 4 \times 4 = 25.
 $$但再想想，名字对一个函数来讲是必须的么？当然不是，下面这个映射也表示
 了平方和函数：
 \begin{equation}\label{eqn:mapfun}
-(x,y)\mapsto x\times x + y\times y
+  (x,y)\mapsto x\times x + y\times y
 \end{equation}
 把 (\ref{eqn:mapfun}) 整体当成函数的名字，同样可以表示计算平方和过程：
 $$
@@ -138,7 +138,7 @@ $$
 函数和多参数函数的区分有必要吗？可以换个角度来看，我们把
 (\ref{eqn:mapfun}) 改写成下面这个样子：
 \begin{equation}\label{eqn:highfun}
-x\mapsto(y\mapsto x\times x + y \times y).
+  x\mapsto(y\mapsto x\times x + y \times y).
 \end{equation}
 这个映射是什么意思呢？$x$ 被映射成了 $y\mapsto x\times x + y \times y$，
 后者是一个以 $y$ 为参数的函数。换句话说，(\ref{eqn:highfun}) 表示的是
@@ -181,13 +181,13 @@ $$这样就清楚了，(\ref{eqn:highfun}) 同样可以进行平方和的计算�
 $x',x'',x'''\dots$ 的字符串。
 
 \begin{example}{\bfseries{（一些 $\lambda$ 项）}}
-下面这些都是 $\lambda$ 项：
-\begin{center}
-  \begin{tabular*}{.8\textwidth}{@{\extracolsep{\fill} }ccc}
-    $(\lambda x.(x\,y))$ & $(x(\lambda x.(\lambda x.x)))$ & $((((a\,b)\,c)\,d)\,e)$\\
-    $(((\lambda x.(\lambda y.(y\,x)))\,a)\,b)$ & $((\lambda y.y)\,(\lambda x.(x\,y)))$ & $(\lambda x.(y\,z))$
-  \end{tabular*}
-\end{center}
+  下面这些都是 $\lambda$ 项：
+  \begin{center}
+    \begin{tabular*}{.8\textwidth}{@{\extracolsep{\fill} }ccc}
+      $(\lambda x.(x\,y))$ & $(x(\lambda x.(\lambda x.x)))$ & $((((a\,b)\,c)\,d)\,e)$\\
+      $(((\lambda x.(\lambda y.(y\,x)))\,a)\,b)$ & $((\lambda y.y)\,(\lambda x.(x\,y)))$ & $(\lambda x.(y\,z))$
+    \end{tabular*}
+  \end{center}
 \end{example}
 
 $\lambda$ 项是一种形式语言，换句话说，就是一类特殊形式的字符串罢了，没
@@ -214,29 +214,30 @@ $\lambda$ 项是一种形式语言，换句话说，就是一类特殊形式的�
 \end{notation}
 
 \begin{example}{\bfseries{（省略表示）}}
-下面给出了一些省略表示的 $\lambda$ 项。
-\begin{center}
-  \begin{tabular*}{.7\textwidth}{@{\extracolsep{\fill} }ll}
-    省略表示 & 完整的 $\lambda$ 项\\
-    $\lambda x.\lambda y.y\,x\,a\,b$ & $(\lambda x.(\lambda y.(((y\,x)\,a)\,b)))$\\
-    $(\lambda x.\lambda y.y\,x)\,a\,b$ & $(((\lambda x.(\lambda y.(y\,x)))\,a)\,b)$\\
-    $\lambda g.(\lambda x.g\,(x\,x))\,\lambda x.g\,(x\,x)$ & $(\lambda g.((\lambda x.(g\,(x\,x)))\,(\lambda x.(g\,(x\,x)))))$\\
-    $\lambda x.\lambda y.a\,b\,\lambda z.z$ & $(\lambda x.(\lambda y.((a\,b)\,(\lambda z.z))))$\\
-  \end{tabular*}
-\end{center}
+  下面给出了一些省略表示的 $\lambda$ 项。
+  \begin{center}
+    \begin{tabular*}{.7\textwidth}{@{\extracolsep{\fill} }ll}
+      省略表示 & 完整的 $\lambda$ 项\\
+      $\lambda x.\lambda y.y\,x\,a\,b$ & $(\lambda x.(\lambda y.(((y\,x)\,a)\,b)))$\\
+      $(\lambda x.\lambda y.y\,x)\,a\,b$ & $(((\lambda x.(\lambda y.(y\,x)))\,a)\,b)$\\
+      $\lambda g.(\lambda x.g\,(x\,x))\,\lambda x.g\,(x\,x)$ & $(\lambda g.((\lambda x.(g\,(x\,x)))\,(\lambda x.(g\,(x\,x)))))$\\
+      $\lambda x.\lambda y.a\,b\,\lambda z.z$ & $(\lambda x.(\lambda y.((a\,b)\,(\lambda z.z))))$\\
+    \end{tabular*}
+  \end{center}
 \end{example}
 
 \begin{example}
-用 $\lambda$ 演算解释器可以方便的查看一个 $\lambda$ 项的省略表示和完整
-表示。解释器用字符 \verb|\| 代表 $\lambda$。（更多关于这个解释器的用法和
-各个命令的意义，请参考附录 \ref{sec:interpreter}。）
+  用 $\lambda$ 演算解释器可以方便的查看一个 $\lambda$ 项的省略表示和完整
+  表示。解释器用字符 \verb|\| 代表 $\lambda$。（更多关于这个解释器的用法和
+    各个命令的意义，请参考附录 \ref{sec:interpreter}。）
+  
 \begin{verbcode}
-Lambda> :set +hold
-Lambda> (((\x.(\y.(y x))) a) b)
-(\x.\y.y x) a b
-Lambda> :set +fullform
-Lambda> (\x.\y.y x) a b
-(((\x.(\y.(y x))) a) b)
+    Lambda> :set +hold
+    Lambda> (((\x.(\y.(y x))) a) b)
+    (\x.\y.y x) a b
+    Lambda> :set +fullform
+    Lambda> (\x.\y.y x) a b
+    (((\x.(\y.(y x))) a) b)
 \end{verbcode}
 \end{example}
 
@@ -252,11 +253,11 @@ $\lambda\phi$ 约束的变量 $\phi$ 替换成另一个 $\lambda$ 项罢了。�
 
 \begin{definition}{\bfseries{（语法全等）}}
   我们用恒等号``$\equiv$''表示两个 $\lambda$ 项完全相同。换句话说
-$$
-M\equiv N
-$$表示 $M$ 和 $N$ 有完全相同的结构，且对应位置上的变量也完全相同。这意
-味着若 $M\,N\equiv P\,Q$ 则 $M\equiv P$ 且 $N\equiv Q$，若
-$\lambda\phi.M\equiv\lambda\psi.P$ 则 $\phi\equiv\psi$ 且 $M\equiv P$。
+  $$
+  M\equiv N
+  $$表示 $M$ 和 $N$ 有完全相同的结构，且对应位置上的变量也完全相同。这意
+  味着若 $M\,N\equiv P\,Q$ 则 $M\equiv P$ 且 $N\equiv Q$，若
+  $\lambda\phi.M\equiv\lambda\psi.P$ 则 $\phi\equiv\psi$ 且 $M\equiv P$。
 \end{definition}
 
 \begin{definition}{\bfseries{（自由变量）}}
@@ -305,19 +306,19 @@ $\lambda\phi.M\equiv\lambda\psi.P$ 则 $\phi\equiv\psi$ 且 $M\equiv P$。
   $\phi$ 替换成 $N$，并改变部分约束变量名称以避免冲突后得到的结果。具
   体精确定义是一个对 $M$ 的归纳定义：
   \begin{tightenum}
-    \item $[N/\phi]\,\phi\equiv N$
-    \item $[N/\phi]\,\alpha\equiv\alpha$\hfill 对所有满足
-      $\alpha\not\equiv\phi$ 的原子 $\alpha$
-    \item $[N/\phi]\,(P\,Q)\equiv([N/\phi]\,P\;[N/\phi]\,Q)$\label{enum:sub:app}
-    \item $[N/\phi]\,(\lambda\phi.P)\equiv\lambda\phi.P$\label{enum:sub:samebind}
-    \item $[N/\phi]\,(\lambda\psi.P)\equiv\lambda\psi.P$\hfill 若
-      $\phi\not\in\text{FV}(P)$\label{enum:sub:bind}
-    \item
-      $[N/\phi]\,(\lambda\psi.P)\equiv\lambda\psi.[N/\phi]\,P$\hfill
-      若 $\phi\in\text{FV}(P)$ 且 $\psi\not\in\text{FV}(N)$\label{enum:sub:1free}
-    \item
-      $[N/\phi]\,(\lambda\psi.P)\equiv\lambda\eta.[N/\phi][\eta/\psi]\,P$\hfill
-      若 $\phi\in\text{FV}(P)$ 且 $\psi\in\text{FV}(N)$\label{enum:sub:2free}
+  \item $[N/\phi]\,\phi\equiv N$
+  \item $[N/\phi]\,\alpha\equiv\alpha$\hfill 对所有满足
+    $\alpha\not\equiv\phi$ 的原子 $\alpha$
+  \item $[N/\phi]\,(P\,Q)\equiv([N/\phi]\,P\;[N/\phi]\,Q)$\label{enum:sub:app}
+  \item $[N/\phi]\,(\lambda\phi.P)\equiv\lambda\phi.P$\label{enum:sub:samebind}
+  \item $[N/\phi]\,(\lambda\psi.P)\equiv\lambda\psi.P$\hfill 若
+    $\phi\not\in\text{FV}(P)$\label{enum:sub:bind}
+  \item
+    $[N/\phi]\,(\lambda\psi.P)\equiv\lambda\psi.[N/\phi]\,P$\hfill
+    若 $\phi\in\text{FV}(P)$ 且 $\psi\not\in\text{FV}(N)$\label{enum:sub:1free}
+  \item
+    $[N/\phi]\,(\lambda\psi.P)\equiv\lambda\eta.[N/\phi][\eta/\psi]\,P$\hfill
+    若 $\phi\in\text{FV}(P)$ 且 $\psi\in\text{FV}(N)$\label{enum:sub:2free}
   \end{tightenum}
   对其中从 \ref{enum:sub:bind} 到 \ref{enum:sub:2free} 的各条来说，
   $\phi\not\equiv\psi$；而对 \ref{enum:sub:2free}，$\eta$ 是满足
@@ -363,20 +364,19 @@ $$里的 $x$ 是所谓的哑变量，换成别的如 $f(t)\text{d}t$ 不会改�
 \begin{definition}{\bfseries{（$\alpha$ 变换和 $\alpha$ 等价）}}
   设 $\lambda\phi.M$ 出现在一个 $\lambda$ 项 $P$ 中，且设
   $\psi\not\in\text{FV}(M)$，那么把 $\lambda\phi.M$ 替换成
-$$
-\lambda\psi.[\psi/\phi]\,M
-$$的操作被称为 $P$ 的 \emph{$\alpha$ 变换}。当且仅当若 $P$ 经过有限步
-           （包括零步）$\alpha$ 变换后，得到新的 $\lambda$ 项 $Q$，则
-           我们可以称 $P$ 与 $Q$ 是 $\alpha$ 等价的，又写作
-$$
-P\quad\equiv_\alpha\quad Q
-$$
+  $$
+  \lambda\psi.[\psi/\phi]\,M
+  $$的操作被称为 $P$ 的 \emph{$\alpha$ 变换}。当且仅当若 $P$ 经过有限
+  步（包括零步）$\alpha$ 变换后，得到新的 $\lambda$ 项 $Q$，则我们可以
+  称 $P$ 与 $Q$ 是 $\alpha$ 等价的，又写作
+             $$ P\quad\equiv_\alpha\quad Q
+             $$
 \end{definition}
 
 \begin{example}
-$$
-\lambda x.\lambda y.x(x\,y) \equiv_\alpha\lambda x.\lambda v.x(x\,v) \equiv_\alpha\lambda u.\lambda v.u(u\,v)
-$$
+  $$
+  \lambda x.\lambda y.x(x\,y) \equiv_\alpha\lambda x.\lambda v.x(x\,v) \equiv_\alpha\lambda u.\lambda v.u(u\,v)
+  $$
 \end{example}
 
 有了 $\alpha$ 等价，定义 \ref{def:sub} 就显得更加合理了，第
@@ -390,6 +390,41 @@ $$
 $\lambda$ 项有这些``意义''。它只是``名''，和``实''不相关。整个这篇文章
 想表达的就是，某些``实''，完全可以用对 $\lambda$ 项这个``名''的各种操
 作来体现。
+
+\subsection{规约}
+
+现在我们有了 $\lambda$ 项，有了替换的规则，那么什么时候需要进行替换呢？
+这就是本小节要讨论的话题：规约。有了规约，整个关于 $\lambda$ 项的形式
+系统才算完整，才可以说是 $\lambda$ 演算。
+
+先介绍 $\beta$ 规约，$\beta$ 规约可以这么直观的理解：我们可以把
+$(\lambda\phi.M)$ 看成是参数为 $\phi$，函数体为 $M$ 的一个函数；把
+$(M\,N)$ 看成是函数 $M$ 作用到实际参数 $N$ 上\footnote{还是再强调一下，
+  这只是直观的理解，并不是说两种 $\lambda$ 项一个是函数，一个是函数应
+  用。$\lambda$ 项不是这些意义，只是字符串。}。平时我们要是定义了函数
+$f(x)=x+5$，那么函数应用 $f(6)$ 就是把 $x+5$ 中的 $x$ 替换成 6，得到
+$f(6)=6+5=11$。替换是函数应用的实质啊。
+
+\begin{definition}{\bfseries{（$\beta$ 规约）}}
+  形如
+  $$
+  (\lambda\phi.M)\,N
+  $$
+  的 $\lambda$ 项被称为 \emph{$\beta$ 可约式}，对应的项
+  $$
+  [N/\phi]\,M
+  $$则称为 \emph{$\beta$ 缩减项}。当 $P$ 中含有 $(\lambda\phi.M)\,N$
+  时，我们可以把 $P$ 中的 $(\lambda\phi.M)\,N$ 整体替换成
+  $[N/\phi]\,M$，用 $R$ 指称替换后的得到的项，那么我们说 $P$
+  \emph{$\beta$ 缩减}为 $R$，写做：
+  $$
+  P\;\triangleright_{1\beta}\;R
+  $$当 $P$ 经过有限步（包括零步）的 $\beta$ 缩减后得到 $Q$，则称 $P$
+  \emph{$\beta$ 规约}到 $Q$，写做：
+  $$
+  P\;\triangleright_\beta\;Q
+  $$
+\end{definition}
 
 \newpage
 \appendix
@@ -408,15 +443,15 @@ $\lambda$ 项有这些``意义''。它只是``名''，和``实''不相关。整�
 一下用户可以设定的参数。
 
 默认设置下，解释器会自动对用户输入的 $\lambda$ 项不断进行 $\beta$ 规约，
-直到得到一个正则形式（如果存在的话）。可用命令 \verb|:set +hold| 让解
-释器进入``原样输出''模式，命令 \verb|:set -hold| 则恢复立即执行的模式。
+直到得到一个范式（如果存在的话）。可用命令 \verb|:set +hold| 让解释器
+进入``原样输出''模式，命令 \verb|:set -hold| 则恢复立即执行的模式。
 
 \begin{verbcode}
-Lambda> (\x.\y.y x) a b
-b a
-Lambda> :set +hold
-Lambda> (\x.\y.y x) a b
-(\x.\y.y x) a b
+  Lambda> (\x.\y.y x) a b
+  b a
+  Lambda> :set +hold
+  Lambda> (\x.\y.y x) a b
+  (\x.\y.y x) a b
 \end{verbcode}
 
 解释器默认的输出样式采用了省略表示，去掉了不必要的括号，可以用命令
@@ -424,60 +459,60 @@ Lambda> (\x.\y.y x) a b
 的结果。
 
 \begin{verbcode}
-Lambda> (a b) c d e f g
-a b c d e f g
-Lambda> :set +fullform
-Lambda> a b c d e f g
-((((((a b) c) d) e) f) g)
-Lambda> \x.\y.y x a b
-(\x.(\y.(((y x) a) b)))
+  Lambda> (a b) c d e f g
+  a b c d e f g
+  Lambda> :set +fullform
+  Lambda> a b c d e f g
+  ((((((a b) c) d) e) f) g)
+  Lambda> \x.\y.y x a b
+  (\x.(\y.(((y x) a) b)))
 \end{verbcode}
 
 解释器默认情况下，只输出最终的规约结果，可以用命令 \verb|:set +trace|
 和 \verb|:set -trace| 控制是否输出中间结果。
 
 \begin{verbcode}
-Lambda> (\x.\y.y x) a b
-b a
-Lambda> :set +trace
-Lambda> (\x.\y.y x) a b
-==> (\x.\y.y x) a b
-==> (\y.y a) b
-==> b a
+  Lambda> (\x.\y.y x) a b
+  b a
+  Lambda> :set +trace
+  Lambda> (\x.\y.y x) a b
+  ==> (\x.\y.y x) a b
+  ==> (\y.y a) b
+  ==> b a
 \end{verbcode}
 
-由于一个 $\lambda$ 项是否一定可以被 $\beta$ 规约规约到正则形式是不可判
-定的，所以为了折衷解决这个问题，解释器设置了一个阈值，当规约步数超过
-``$\lambda$ 项长度$\times$阈值'' 时，解释器就输出说疑似不可规约。这个
-阈值可以用 \verb|:set steps 非负整数| 来修改，默认是 100。用户若是觉得
-阈值及前述三个控制选项经多次修改之后太乱了，可以用命令
+由于一个 $\lambda$ 项是否一定可以被 $\beta$ 规约规约到 $\beta$ 范式是
+不可判定的，所以为了折衷解决这个问题，解释器设置了一个阈值，当规约步数
+超过``$\lambda$ 项长度$\times$阈值'' 时，解释器就输出说疑似不可规约。
+这个阈值可以用 \verb|:set steps 非负整数| 来修改，默认是 100。用户若是
+觉得阈值及前述三个控制选项经多次修改之后太乱了，可以用命令
 \verb|:reset settings| 来恢复默认设置。
 
 \begin{verbcode}
-Lambda> (\x.\y.y y x) a b
-b b a
-Lambda> :set steps 0
-Lambda> (\x.\y.y y x) a b
-(\x.\y.y y x) a b seems can't be reduced!
-Lambda> :reset settings
-Lambda> (\x.\y.y y x) a b
-b b a
+  Lambda> (\x.\y.y y x) a b
+  b b a
+  Lambda> :set steps 0
+  Lambda> (\x.\y.y y x) a b
+  (\x.\y.y y x) a b seems can't be reduced!
+  Lambda> :reset settings
+  Lambda> (\x.\y.y y x) a b
+  b b a
 \end{verbcode}
 
 解释器支持用户绑定名称到组合子，注意，只能是组合子，也就是没有自由变量
 的 $\lambda$ 项。组合子中可以出现已经绑定的名称，但不允许递归定义。已
 经绑定的名称不能再次绑定。
 \begin{verbcode}
-Lambda> swap = \x.\y.y x
-Lambda> swap a b
-b a
-Lambda> foo = swap \x.x
-Lambda> foo \x.y
-y
-Lambda> id = id \x.x
-id can't be recursively defined!
-Lambda> foo = \x.x
-foo has been defined already!
+  Lambda> swap = \x.\y.y x
+  Lambda> swap a b
+  b a
+  Lambda> foo = swap \x.x
+  Lambda> foo \x.y
+  y
+  Lambda> id = id \x.x
+  id can't be recursively defined!
+  Lambda> foo = \x.x
+  foo has been defined already!
 \end{verbcode}
 
 解释器已经默认绑定了一些这篇文章里出现的组合子，全部列表可见
@@ -485,22 +520,22 @@ foo has been defined already!
 \verb|:reset state| 来恢复默认的绑定，清空自定义的绑定。也可以用命令
 \verb|:clear state| 来清空全部的绑定。
 \begin{verbcode}
-Lambda> plus
-\m.m \n.\f.\x.f (n f x)
-Lambda> plus four four
-\f.\x.f (f (f (f (f (f (f (f x)))))))
-Lambda> id = \x.x
-Lambda> id a
-a
-Lambda> :reset state
-Lambda> id a
-id a
-Lambda> :clear state
-Lambda> plus four four
-plus four four
-Lambda> :reset state
-Lambda> plus four four
-\f.\x.f (f (f (f (f (f (f (f x)))))))
+  Lambda> plus
+  \m.m \n.\f.\x.f (n f x)
+  Lambda> plus four four
+  \f.\x.f (f (f (f (f (f (f (f x)))))))
+  Lambda> id = \x.x
+  Lambda> id a
+  a
+  Lambda> :reset state
+  Lambda> id a
+  id a
+  Lambda> :clear state
+  Lambda> plus four four
+  plus four four
+  Lambda> :reset state
+  Lambda> plus four four
+  \f.\x.f (f (f (f (f (f (f (f x)))))))
 \end{verbcode}
 
 以上就是用户在 $\lambda$ 演算解释器里可以做的全部设置了。要退出解释器，
@@ -509,26 +544,26 @@ Lambda> plus four four
 \section{解释器默认绑定的组合子和名称}\label{sec:bindCombinator}
 其实就是依次运行如下命令后，解释器内部状态中绑定的组合子。
 \begin{verbcode}
-zero   = \f.\x.x
-succ   = \n.\f.\x.f (n f x)
-plus   = \m.\n.m succ n
-mult   = \m.\n.\f.m (n f)
-pow    = \b.\e.e b
-pred   = \n.\f.\x.n (\g.\h.h (g f)) (\u.x) (\u.u)
-sub    = \m.\n.n pred m
-one    = succ zero
-two    = succ one
-three  = succ two
-four   = succ three
-true   = \x.\y.x
-false  = \x.\y.y
-and    = \p.\q.p q p
-or     = \p.\q.p p q
-not    = \p.\a.\b.p b a
-if     = \p.\a.\b.p a b
-iszero = \n.n (\x.false) true
-leq    = \m.\n.iszero (sub m n)
-eq     = \m.\n. and (leq m n) (leq n m)
-Y      = \g.(\x.g (x x)) (\x.g (x x))
+  zero   = \f.\x.x
+  succ   = \n.\f.\x.f (n f x)
+  plus   = \m.\n.m succ n
+  mult   = \m.\n.\f.m (n f)
+  pow    = \b.\e.e b
+  pred   = \n.\f.\x.n (\g.\h.h (g f)) (\u.x) (\u.u)
+  sub    = \m.\n.n pred m
+  one    = succ zero
+  two    = succ one
+  three  = succ two
+  four   = succ three
+  true   = \x.\y.x
+  false  = \x.\y.y
+  and    = \p.\q.p q p
+  or     = \p.\q.p p q
+  not    = \p.\a.\b.p b a
+  if     = \p.\a.\b.p a b
+  iszero = \n.n (\x.false) true
+  leq    = \m.\n.iszero (sub m n)
+  eq     = \m.\n. and (leq m n) (leq n m)
+  Y      = \g.(\x.g (x x)) (\x.g (x x))
 \end{verbcode}
 \end{document}
