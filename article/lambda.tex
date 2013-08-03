@@ -242,6 +242,155 @@ Lambda> (\x.\y.y x) a b
 
 \subsection{替换}
 
+只定义了一个形式语言，那是没什么用处的。这一小节将形式化的定义什么是
+$\lambda$ 项的替换操作。直观的来讲，就是把 $\lambda$ 项中不被
+$\lambda\phi$ 约束的变量 $\phi$ 替换成另一个 $\lambda$ 项罢了。但这么
+一个操作的精确定义却不是直接和易于理解的。我觉得这块的定义因严谨而优美，
+但有的人看来可能就是琐碎而无聊了。没有兴趣的读者可以跳过这一小节。只要
+记住 $\lambda$ 项的替换，是有精确严格定义的就行，反正具体计算可以让解
+释器代劳嘛。
+
+\begin{definition}{\bfseries{（语法全等）}}
+  我们用恒等号``$\equiv$''表示两个 $\lambda$ 项完全相同。换句话说
+$$
+M\equiv N
+$$表示 $M$ 和 $N$ 有完全相同的结构，且对应位置上的变量也完全相同。这意
+味着若 $M\,N\equiv P\,Q$ 则 $M\equiv P$ 且 $N\equiv Q$，若
+$\lambda\phi.M\equiv\lambda\psi.P$ 则 $\phi\equiv\psi$ 且 $M\equiv P$。
+\end{definition}
+
+\begin{definition}{\bfseries{（自由变量）}}
+  对一个 $\lambda$ 项 $P$，我们可以定义 $P$ 中\emph{自由变量}的集合
+  $\text{FV}(P)$ 如下：
+  \begin{tightenum}
+  \item $\text{FV}(\phi) = \{\phi\}$
+  \item $\text{FV}(\lambda\phi.M) = \text{FV}(M)\,\backslash\,\{\phi\}$\label{enum:fvforabs}
+  \item $\text{FV}(M\,N) = \text{FV}(M)\cup\text{FV}(N)$
+  \end{tightenum}
+\end{definition}
+
+从第 \ref{enum:fvforabs} 可以看出抽象 $\lambda\phi.M$ 中的变量 $\phi$
+是要从 $M$ 中被排除出自由变量这个集合的。若 $M$ 中有 $\phi$，我们可以
+说它是被\emph{约束}的。据此可以进一步定义\emph{约束变量}集合。值得注意
+的是，对同一个 $\lambda$ 项来说，这两个集合的交集未必为空。
+
+\begin{example}{\bfseries{（自由变量）}}
+  \begin{center}
+    \begin{tabular*}{.7\textwidth}{@{\extracolsep{\fill} }ll}
+      $\lambda$ 项 $P$ & 自由变量集合 $\text{FV}(P)$\\
+      $\lambda x.\lambda y.x\,y\,a\,b$ & $\{a,b\}$\\
+      $a\,b\,c\,d$ & $\{a,b,c,d\}$\\
+      $x\,y\,\lambda y.\lambda x.x$ & $\{x,y\}$
+    \end{tabular*}
+  \end{center}
+\end{example}
+
+上面最后一个例子里，最左边的 $x,y$ 是自由变量，而最右侧的 $x$ 则是约束
+变量。若对 $\lambda$ 项 $P$ 有 $\text{FV}(P)=\emptyset$，则称 $P$ 是
+\emph{封闭}的，这样的 $P$ 又称为\emph{组合子}。
+
+\begin{definition}{\bfseries{（出现）}}
+  对于 $\lambda$ 项 $P$ 和 $Q$，可以定义一个二元关系\emph{出现}。我们
+  说 $P$ 出现在 $Q$ 中，是这样定义的：
+  \begin{tightenum}
+  \item $P$ 出现在 $P$ 中；
+  \item 若 $P$ 出现在 $M$ 中或 $N$ 中，则 $P$ 出现在 $(M\,N)$ 中；
+  \item 若 $P$ 出现在 $M$ 中或 $P\equiv\phi$，则 $P$ 出现在 $(\lambda\phi.M)$ 中。
+  \end{tightenum}
+\end{definition}
+
+有了上面这些定义，我们终于可以定义什么叫 $\lambda$ 项的替换操作了：
+\begin{definition}{\bfseries{（替换）}}\label{def:sub}
+  对任意 $M,N,\phi$，定义 $[N/\phi]\,M$ 是把 $M$ 中出现的自由变量
+  $\phi$ 替换成 $N$，并改变部分约束变量名称以避免冲突后得到的结果。具
+  体精确定义是一个对 $M$ 的归纳定义：
+  \begin{tightenum}
+    \item $[N/\phi]\,\phi\equiv N$
+    \item $[N/\phi]\,\alpha\equiv\alpha$\hfill 对所有满足
+      $\alpha\not\equiv\phi$ 的原子 $\alpha$
+    \item $[N/\phi]\,(P\,Q)\equiv([N/\phi]\,P\;[N/\phi]\,Q)$\label{enum:sub:app}
+    \item $[N/\phi]\,(\lambda\phi.P)\equiv\lambda\phi.P$\label{enum:sub:samebind}
+    \item $[N/\phi]\,(\lambda\psi.P)\equiv\lambda\psi.P$\hfill 若
+      $\phi\not\in\text{FV}(P)$\label{enum:sub:bind}
+    \item
+      $[N/\phi]\,(\lambda\psi.P)\equiv\lambda\psi.[N/\phi]\,P$\hfill
+      若 $\phi\in\text{FV}(P)$ 且 $\psi\not\in\text{FV}(N)$\label{enum:sub:1free}
+    \item
+      $[N/\phi]\,(\lambda\psi.P)\equiv\lambda\eta.[N/\phi][\eta/\psi]\,P$\hfill
+      若 $\phi\in\text{FV}(P)$ 且 $\psi\in\text{FV}(N)$\label{enum:sub:2free}
+  \end{tightenum}
+  对其中从 \ref{enum:sub:bind} 到 \ref{enum:sub:2free} 的各条来说，
+  $\phi\not\equiv\psi$；而对 \ref{enum:sub:2free}，$\eta$ 是满足
+  $\eta\not\in\text{FV}(N\,P)$ 的任意变量。
+\end{definition}
+
+下面解释一下这个看上去很长很恐怖的定义，其实只要带着``替换 $\lambda$
+项中的自由变量 $\phi$ 为 $N$''这个直观去看，就不难理解。前两条无非是说，
+要是一个原子刚好是要被替换的变量，那就替换，不然就不动。第
+\ref{enum:sub:app} 条也好说，遇到应用了，那就替换各子项。第
+\ref{enum:sub:samebind} 条，$P$ 中的 $\phi$ 是被约束的，不能替换所以结
+果不变。同样的情况发生在第 \ref{enum:sub:bind} 条，$P$ 中没有自由变量
+$\phi$，结果也不变。顺着这个思路往下想，$P$ 中要是有自由变量 $\phi$，
+是不是就可以替换了呢？是的，这就是第 \ref{enum:sub:1free} 条的内容了。
+不过这条还有个附加条件，$\psi\not\in\text{FV}(N)$，为什么呢？因为 $P$
+是被 $\lambda\psi$ 约束着的，把 $N$ 替换进去的时候，要是
+$\text{FV}(N)$ 里面有 $\psi$，那替换进去的 $N$ 中的 $\psi$ 就从自由变
+量变成约束变量了。这多少有点让人不放心，所以我们先把这个条件加上，这样
+替换不会把自由变量变成约束变量，这就是第 \ref{enum:sub:1free} 了。但要
+是不如意事长八九，$\text{N}$ 中偏偏有 $\psi$ 怎么办呢？为了避免这个冲
+突，干脆把原先约束的变量先换成绝对不会起冲突的吧，找一个
+$\eta\not\in\text{FV}(N\,P)$ 换掉 $\psi$，然后再按第
+\ref{enum:sub:1free} 条来办，这就是第 \ref{enum:sub:2free} 的内容了。
+特别注意这一条中，不仅把 $P$ 中的 $\psi$ 换成了 $\eta$，连最前面的
+$\lambda\psi$ 都被换成了 $\lambda\eta$。
+
+上面的解释只是为了让读者理解一下定义 \ref{def:sub} 的合理性，其实还是
+有一些没有解释清楚的疑问，比如为什么从自由变量变成约束变量就不好了？第
+\ref{enum:sub:2free} 条中 $\eta$ 有无数种选择，这种不确定性会不会有什
+么问题？这些问题的答案是：没什么为什么，定义如此。定义 \ref{def:sub}
+是定义不是定理，它说了算，爱怎么定义怎么定义。
+
+定义 \ref{def:sub} 第 \ref{enum:sub:2free} 条里，替换的不确定性暗示了
+可以任意替换约束变量而不改变``意义''。这个可以类比的理解，例如定积分
+$$
+\int_a^bf(x)\text{d}x
+$$里的 $x$ 是所谓的哑变量，换成别的如 $f(t)\text{d}t$ 不会改变积分式的
+值。不过这只是我为了能直观理解而加上的一种解释。实际上 $\lambda$ 项是
+形式系统，只是形式，一堆字符串罢了，哪里有什么``意义''。
+
+可以说为了补救任意替换约束变量给人带来的不安，我们有了下面的定义：
+
+\begin{definition}{\bfseries{（$\alpha$ 变换和 $\alpha$ 等价）}}
+  设 $\lambda\phi.M$ 出现在一个 $\lambda$ 项 $P$ 中，且设
+  $\psi\not\in\text{FV}(M)$，那么把 $\lambda\phi.M$ 替换成
+$$
+\lambda\psi.[\psi/\phi]\,M
+$$的操作被称为 $P$ 的 \emph{$\alpha$ 变换}。当且仅当若 $P$ 经过有限步
+           （包括零步）$\alpha$ 变换后，得到新的 $\lambda$ 项 $Q$，则
+           我们可以称 $P$ 与 $Q$ 是 $\alpha$ 等价的，又写作
+$$
+P\quad\equiv_\alpha\quad Q
+$$
+\end{definition}
+
+\begin{example}
+$$
+\lambda x.\lambda y.x(x\,y) \equiv_\alpha\lambda x.\lambda v.x(x\,v) \equiv_\alpha\lambda u.\lambda v.u(u\,v)
+$$
+\end{example}
+
+有了 $\alpha$ 等价，定义 \ref{def:sub} 就显得更加合理了，第
+\ref{enum:sub:2free} 带来的疑问也得到解答了：不是担心任意替换不妥当么？
+那么我们把 $\alpha$ 等价的 $\lambda$ 项都看成相同的，这不就``补救''了
+由于不确定替换带来的问题嘛。事实上，后面的相关的定理也是这么做的。
+
+强调一下，这个小节里定义的 $[N/\phi]\,M$ 并不是 $\lambda$ 项这个形式语
+言里的东西，它只是一种记号，用来指称替换后的 $\lambda$ 项而已，切记切
+记。而我各种解释说明中的意义和类比都只是为了方便直观的理解，并不是说
+$\lambda$ 项有这些``意义''。它只是``名''，和``实''不相关。整个这篇文章
+想表达的就是，某些``实''，完全可以用对 $\lambda$ 项这个``名''的各种操
+作来体现。
+
 \newpage
 \appendix
 %% \section{\texorpdfstring{$\lambda$ 演算解释器简要使用说明}{$Lambda 演算解释器简要使用说明}}
