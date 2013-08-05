@@ -98,12 +98,6 @@ alphaCongruent (Abs x tx) (Abs y ty)
 
 loReduce :: TermL -> Maybe TermL
 loReduce (Var _) = Nothing
-loReduce (Abs x t'@(App t (Var y)))
-  | x == y && (x `Set.notMember` freeVars t) = Just t --eta conversion
-  | otherwise =
-    case loReduce t' of
-      Just t'' -> Just $ Abs x t''
-      Nothing -> Nothing
 loReduce (App (Abs x t1) t2) = Just $ subst t2 x t1 --beta reduction
 loReduce (App t1 t2) =
   case loReduce t1 of
