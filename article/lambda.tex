@@ -303,8 +303,8 @@ $\lambda\phi$ 约束的变量 $\phi$ 替换成另一个 $\lambda$ 项罢了。�
 有了上面这些定义，我们终于可以定义什么叫 $\lambda$ 项的替换操作了：
 \begin{definition}{\bfseries{（替换）}}\label{def:sub}
   对任意 $M,N,\phi$，定义 $[N/\phi]\,M$ 是把 $M$ 中出现的自由变量
-  $\phi$ 替换成 $N$，并改变部分约束变量名称以避免冲突后得到的结果。具
-  体精确定义是一个对 $M$ 的归纳定义：
+  $\phi$ 替换成 $N$ 后得到的结果，这个替换有可能改变部分约束变量名称以
+  避免冲突。具体精确定义是一个对 $M$ 的归纳定义：
   \begin{tightenum}
   \item $[N/\phi]\,\phi\equiv N$
   \item $[N/\phi]\,\alpha\equiv\alpha$\hfill 对所有满足
@@ -348,16 +348,17 @@ $\lambda\psi$ 都被换成了 $\lambda\eta$。
 上面的解释只是为了让读者理解一下定义 \ref{def:sub} 的合理性，其实还是
 有一些没有解释清楚的疑问，比如为什么从自由变量变成约束变量就不好了？第
 \ref{enum:sub:2free} 条中 $\eta$ 有无数种选择，这种不确定性会不会有什
-么问题？这些问题的答案是：没什么为什么，定义如此。定义 \ref{def:sub}
-是定义不是定理，它说了算，爱怎么定义怎么定义。
+么问题？这些问题的答案是：没什么为什么，定义如此。定义不是定理，它说了
+算，就算有它内蕴的合理性，也并不需要在这个时候证明。
 
-定义 \ref{def:sub} 第 \ref{enum:sub:2free} 条里，替换的不确定性暗示了
-可以任意替换约束变量而不改变``意义''。这个可以类比的理解，例如定积分
+定义 \ref{def:sub} 的第 \ref{enum:sub:2free} 条里，替换的不确定性暗示
+了可以任意替换约束变量而不改变``意义''。这个可以类比的理解，例如定积分
 $$
 \int_a^bf(x)\text{d}x
 $$里的 $x$ 是所谓的哑变量，换成别的如 $f(t)\text{d}t$ 不会改变积分式的
-值。不过这只是我为了能直观理解而加上的一种解释。实际上 $\lambda$ 项是
-形式系统，只是形式，一堆字符串罢了，哪里有什么``意义''。
+值。又比如正弦函数是写成 $\sin x$ 还是 $\sin t$ 都不影响它的意义。不过
+这只是我为了能直观理解而加上的一种解释。实际上 $\lambda$ 项是形式系统，
+只是形式，一堆字符串罢了，哪里有什么``意义''。
 
 可以说为了补救任意替换约束变量给人带来的不安，我们有了下面的定义：
 
@@ -379,17 +380,21 @@ $$里的 $x$ 是所谓的哑变量，换成别的如 $f(t)\text{d}t$ 不会改�
   $$
 \end{example}
 
-有了 $\alpha$ 等价，定义 \ref{def:sub} 就显得更加合理了，第
+容易证明，$\equiv_\alpha$ 满足自反性、对称性和传递性，所以确实是等价关
+系。有了 $\alpha$ 等价，定义 \ref{def:sub} 就显得更加合理了，第
 \ref{enum:sub:2free} 带来的疑问也得到解答了：不是担心任意替换不妥当么？
-那么我们把 $\alpha$ 等价的 $\lambda$ 项都看成相同的，这不就``补救''了
-由于不确定替换带来的问题嘛。事实上，后面的相关的定理也是这么做的。
+那么我们可以把 $\alpha$ 等价的 $\lambda$ 项都看成相同的，这不就``补救''了
+由于不确定替换带来的问题嘛。事实上，有更好的结果：
+
+\begin{theorem}
+  若 $M\,\equiv_\alpha\,M'$ 且 $N\,\equiv_\alpha\, N'$，则
+  $[N/x]\,M\,\equiv_\alpha\,[N'/x]\,M'$
+\end{theorem}
 
 强调一下，这个小节里定义的 $[N/\phi]\,M$ 并不是 $\lambda$ 项这个形式语
 言里的东西，它只是一种记号，用来指称替换后的 $\lambda$ 项而已，切记切
 记。而我各种解释说明中的意义和类比都只是为了方便直观的理解，并不是说
-$\lambda$ 项有这些``意义''。它只是``名''，和``实''不相关。整个这篇文章
-想表达的就是，某些``实''，完全可以用对 $\lambda$ 项这个``名''的各种操
-作来体现。
+$\lambda$ 项有这些``意义''。它始终只是``名''，和``实''不相关。作来体现。
 
 \subsection{规约}
 
@@ -405,7 +410,7 @@ $(M\,N)$ 看成是函数 $M$ 作用到实际参数 $N$ 上\footnote{还是再强
 $f(x)=x+5$，那么函数应用 $f(6)$ 就是把 $x+5$ 中的 $x$ 替换成 6，得到
 $f(6)=6+5=11$。替换是函数应用的实质啊。
 
-\begin{definition}{\bfseries{（$\beta$ 规约）}}
+\begin{definition}{\bfseries{（$\beta$ 规约）}}\label{def:betareduce}
   形如
   $$
   (\lambda\phi.M)\,N
@@ -413,18 +418,135 @@ $f(6)=6+5=11$。替换是函数应用的实质啊。
   的 $\lambda$ 项被称为 \emph{$\beta$ 可约式}，对应的项
   $$
   [N/\phi]\,M
-  $$则称为 \emph{$\beta$ 缩减项}。当 $P$ 中含有 $(\lambda\phi.M)\,N$
-  时，我们可以把 $P$ 中的 $(\lambda\phi.M)\,N$ 整体替换成
-  $[N/\phi]\,M$，用 $R$ 指称替换后的得到的项，那么我们说 $P$
-  \emph{$\beta$ 缩减}为 $R$，写做：
+  $$则称为 \emph{$\beta$ 缩减项}。当 $P$ 中含有 $(\lambda\phi.M)\,N$时，
+  我们可以把 $P$ 中的 $(\lambda\phi.M)\,N$ 整体替换成$[N/\phi]\,M$，用
+  $R$ 指称替换后的得到的项，那么我们说 $P$ 被 \emph{$\beta$ 缩减}为
+  $R$，写做：
   $$
   P\;\triangleright_{1\beta}\;R
   $$当 $P$ 经过有限步（包括零步）的 $\beta$ 缩减后得到 $Q$，则称 $P$
-  \emph{$\beta$ 规约}到 $Q$，写做：
+  被 \emph{$\beta$ 规约}到 $Q$，写做：
   $$
   P\;\triangleright_\beta\;Q
   $$
 \end{definition}
+
+\newcommand{\betac}{\triangleright_{1\beta}}
+\newcommand{\betar}{\triangleright_\beta}
+
+\begin{example}{\bfseries{（$\beta$ 缩减）}}\label{example:beta}
+  \begin{alignat*}{2}
+    (\lambda x.x\,(x\,y))\,m \quad &\betac\quad  m(m\,y) \\
+    (\lambda x.y)\,n \quad &\betac\quad y \\
+    (\lambda x.(\lambda y.y\,x)z)\,v\quad &\betac\quad [v/x]\,((\lambda y.y\,x)z) & &\equiv\quad (\lambda y.y\,v)z\\
+    &\betac\quad [z/y]\,(y\,v)&\quad &\equiv\quad z\,v \\
+    (\lambda x.x\,x)\,(\lambda x.x\,x)\quad &\betac\quad [(\lambda x.x\,x)/x]\,(x\,x) & &\equiv\quad (\lambda x.x\,x)\,(\lambda x.x\,x)\\
+    &\betac\quad [(\lambda x.x\,x)/x]\,(x\,x) & &\equiv\quad (\lambda x.x\,x)\,(\lambda x.x\,x)\\
+    &\cdots\quad \text{etc.}\\
+    (\lambda x.x\,x\,y)\,(\lambda x.x\,x\,y)\quad &\betac\quad (\lambda x.x\,x\,y)y\\
+    &\betac\quad (\lambda x.x\,x\,y)yy \\
+    &\cdots\quad \text{etc.} \\
+  \end{alignat*}
+\end{example}
+
+从上面的例子可以看出，$\beta$ 缩减虽然名为缩减，但实际情况是复杂的。像
+最后这两个例子，一个永远缩减为自身，一个甚至更糟糕，越来越长，非但不是缩
+减反而是增长了。
+
+\begin{definition}{\bfseries{（$\beta$ 范式）}}
+  若一个 $\lambda$ 项 $Q$ 不含有 $\beta$ 可约式，则称 $Q$ 为
+  \emph{$\beta$ 范式}。若有 $P$ 可被 $\beta$ 规约到 $Q$，则称 $Q$ 是
+  $P$ 的 $\beta$ 范式。
+\end{definition}
+
+从示例 \ref{example:beta} 可以看出，并不是所有的 $\lambda$ 项都能
+$\beta$ 规约到 $\beta$ 范式。这其实还不是最让人担心的，有一个之前也许
+没注意到的问题：定义 \ref{def:betareduce} 里关于 $\beta$ 规约的定义非
+常``狡猾''，或者叫非常含糊，它只要求存在一个有限长的 $\beta$ 缩减链就
+行，当 $\lambda$ 项中含有不止一个 $\beta$ 可约式的时候，可以有不同顺序
+的缩减方式。
+
+\begin{example}\label{example:difforder}
+  让我们重新看一下示例 \ref{example:beta} 里的 $(\lambda x.(\lambda
+  y.y\,x)z)\,v$，最外层的 $(\lambda\dots)\,v$ 是一个 $\beta$ 可约式，
+  里层的 $(\lambda y.y\,x)\,z$ 也是一个 $\beta$ 可约式。那么就有两种缩
+  减方式：
+  \begin{alignat*}{2}
+    (\lambda x.(\lambda y.y\,x)z)\,v\quad &\betac \quad (\lambda y.y\,v)\,z \quad& &\text{缩减~}(\lambda x.(\lambda y.y\,x)z)\,v\\
+    &\betac\quad z\,v\quad & &\text{缩减~}(\lambda y.y\,v)\,z\\
+    (\lambda x.(\lambda y.y\,x)z)\,v\quad &\betac \quad (\lambda x.z\,x)\,v \quad& &\text{缩减~}(\lambda y.y\,x)\,z\\
+    &\betac\quad z\,v\quad & &
+  \end{alignat*}
+\end{example}
+
+从示例 \ref{example:difforder} 可以看到，虽然缩减顺序不一样，但最后得
+到了同样的结果。这个是不是对所有的 $\lambda$ 项都成立呢？要是不成立，
+也就说顺序会影响规约结果，就不好了。这个问题的答案可以说既让人满意也让
+人不满意。
+
+\begin{theorem}{\bfseries{（Church--Rosser 定理）}}
+  若 $P\betar M$ 且 $P\betar N$，则存在一个 $\lambda$ 项 $T$ 使得
+$$
+M\;\betar\; T\quad\text{且}\quad N\;\betar\; T.
+$$
+\end{theorem}
+
+Church--Rosser 定理最重要的一个应用就是可以用来证明如下重要结果：
+
+\begin{theorem}
+  若 $P$ 有 $\beta$ 范式，则该范式在模 $\equiv_\alpha$ 的意义下唯一；
+  也就是说若 $P$ 有 $\beta$ 范式 $M$ 和 $N$，则 $M\,\equiv_\alpha\,N$。
+\end{theorem}
+
+有了这个定理，我们可以放一半的心了：如果你对一个 $\lambda$ 项做
+$\beta$ 规约，最后得到个范式，可以确定这个范式某种程度上是唯一的，不用
+担心你因为规约顺序上的随意性导致这个范式和别人不一样。但为啥说是放一半
+的心呢？\emph{因为，这个定理并没有说：若 $P$ 有 $\beta$ 范式，那么你随
+  便按任意顺序规约，都能得到 $\beta$ 范式。}
+
+\begin{example}\label{example:diffdiverge}
+  让我们看下面有 $\beta$ 范式的 $\lambda$ 项的例子：
+  \begin{alignat*}{2}
+    (\lambda x.\lambda y. x)\,a\,((\lambda x.x\,x)\lambda x.x\,x)\; &\betac\;
+    ([a/x]\,(\lambda y.x))\,((\lambda x.x\,x)\lambda x.x\,x) &\; &\equiv\; (\lambda y.a)\,((\lambda x.x\,x)\lambda x.x\,x)\\
+    &\betac\; [((\lambda x.x\,x)\lambda x.x\,x)/y]\,a & &\equiv\; a
+  \end{alignat*}
+  这个 $\lambda$ 项其实包含三项，我们要是先归约前两项
+  (\lambda\dots)\,a 就能得到一个 $\beta$ 范式。但注意第三项也是一个
+  $\beta$ 可约式，完全可以先对它进行规约。但如我们在示例
+  \ref{example:beta} 里的倒数第二项看到的，$((\lambda x.x\,x)\lambda
+  x.x\,x)$ 会不断规约到自身，所以要是执着于把它先规约了，就永远得不到
+  $\beta$ 范式了。
+\end{example}
+
+于是我们就要问了，若 $P$ 有 $\beta$ 范式，怎么才能规约得到它？按任意顺
+序规约就有可能出现示例 \ref{example:diffdiverge} 中的问题。可要是全部
+穷举，含有 $n$ 个 $\beta$ 可约式的话就有 $n!$ 种规约顺序，一一列举也太
+费事了吧。万幸，1958 年 Curry 证明了这么一个定理：
+
+\begin{theorem}
+  对 $P$ 的总是先 $\beta$ 缩减最左侧最外侧的 $\beta$ 可约式，若这个过
+  程能无限进行下去，那么对 $P$ 的所有任意顺序的规约都能无穷进行下去。
+\end{theorem}
+
+换而言之，要是 $P$ 有 $\beta$ 范式，那么这种最左最外侧优先的规约方式总
+能保证得到那个 $\beta$ 范式，这种规约顺序又称为\emph{正则序}。我的解释
+器实现的规约顺序就是正则序，虽然它规约需要的步数可能较多，但抵消不了这
+个巨大的优势啊。
+
+到目前为止，我们得到的结果都是满意的：一个 $\lambda$ 项若是有 $\beta$
+范式，那么这个 $\beta$ 范式某种程度上是唯一的，而且我们有确定的规约顺
+序保证得到这个范式。下面就只有一个问题了：能否有一个通用算法，判定一个
+$\lambda$ 项是否有 $\beta$ 范式？非常不幸，答案是否定的：
+
+\begin{theorem}
+  $\lambda$ 项是否有 $\beta$ 范式是不可判定的。
+\end{theorem}
+
+到这里我们算是粗粗的把 $\lambda$ 演算的主要内容：$\beta$ 规约介绍了一
+下。还有个 $\eta$ 规约有兴趣的读者可以自行查找相关资料，这里就不多做介
+绍了。这个 $\beta$ 规约已经足够把 $\lambda$ 演算看成一个完整的程序设计
+语言了。下面我将结合 $\lambda$ 演算解释器真实不虚的向读者展现这一点。
 
 \newpage
 \appendix
