@@ -232,12 +232,12 @@ $\lambda$ 项是一种形式语言，换句话说，就是一类特殊形式的�
     各个命令的意义，请参考附录 \ref{sec:interpreter}。）
   
 \begin{verbcode}
-    Lambda> :set +hold
-    Lambda> (((\x.(\y.(y x))) a) b)
-    (\x.\y.y x) a b
-    Lambda> :set +fullform
-    Lambda> (\x.\y.y x) a b
-    (((\x.(\y.(y x))) a) b)
+Lambda> :set +hold
+Lambda> (((\x.(\y.(y x))) a) b)
+(\x.\y.y x) a b
+Lambda> :set +fullform
+Lambda> (\x.\y.y x) a b
+(((\x.(\y.(y x))) a) b)
 \end{verbcode}
 \end{example}
 
@@ -545,9 +545,113 @@ $\lambda$ 项是否有 $\beta$ 范式？非常不幸，答案是否定的：
 
 到这里我们算是粗粗的把 $\lambda$ 演算的主要内容：$\beta$ 规约介绍了一
 下。还有个 $\eta$ 规约有兴趣的读者可以自行查找相关资料，这里就不多做介
-绍了。这个 $\beta$ 规约已经足够把 $\lambda$ 演算看成一个完整的程序设计
-语言了。下面我将结合 $\lambda$ 演算解释器真实不虚的向读者展现这一点。
+绍了。这个 $\beta$ 规约就已经足够把 $\lambda$ 演算看成一个完整的程序设计
+语言了。下面我将结合 $\lambda$ 演算解释器向读者展现这一点。
 
+\section{程序设计语言}
+前面为了能指称一般的 $\lambda$ 项引入了一些符号。本节中，需要指称具体的组合子，所以也做如下约定：
+\begin{notation}
+  本文中，我们用粗体的大写字母及由它们组成的字符串代表具体的组合子，不
+  同的粗体字母字符串如不做特殊说明，一般表示不同的组合子。当它们出现在
+  $\lambda$ 项中时，视同对应的组合子整体出现在 $\lambda$ 项中。
+
+  用粗体大写字母及其字符串代表组合子，可用等号 ``$=$'' 表示。比如想用
+  $\mathbf{M}$ 代表 $\lambda x.x$，可写作：$\mathbf{M}=\lambda x.x$。
+\end{notation}
+\begin{example}
+随便举些例子好了：
+\begin{tightenum}
+\item 定义 $\mathbf{I}=\lambda x.x$，则 $\mathbf{I}\,a \equiv (\lambda
+  x.x)\,a \betar a$。
+\item 定义 $\mathbf{SWAP}=\lambda x.\lambda y.y\,x$，则
+  $\mathbf{SWAP}\,a\, b \equiv (\lambda x.\lambda y.y\,x)\,a\,b \betar
+  b a$
+\item 定义 $\mathbf{S}=\lambda x.\lambda y.\lambda z.x z (y z)$，则 $\mathbf{S}\,a\,b\,c \equiv (\lambda x.\lambda y.\lambda z.x z (y z))\,a\,b\,c \betar a\,c\,(b\,c)$ 
+\end{tightenum}
+\end{example}
+从例子可以看出，组合子命名并没有改变 $\beta$ 规约的规则。不过是在规约
+前先做简单替换罢了，和 C 语言中的宏一个道理。在解释器里面，也可以定义
+定义组合子，也是用等号，但不再限于用大写字母，任何合法的变量名都可以，
+但这种名称和组合子的绑定建立，就不能重新定义了。解释器里等于维护了一张
+表，在进行 $\beta$ 规约前，会先查表把素所有绑定的名称都替换成对应的组
+合子。实在需要重定义的话，只能把整张表重置或清空。具体用法请参考附录
+\ref{sec:interpreter}。
+
+\begin{example}
+\begin{verbcode}
+Lambda> I = \x.x
+Lambda> I a
+a
+Lambda> SWAP = \x.\y.y x
+Lambda> SWAP a b
+b a
+Lambda> S = \x.\y.\z.x z(y z)
+Lambda> S a b c
+a c (b c)
+Lambda> l = S I
+Lambda> l m n
+n (m n)
+\end{verbcode}
+\end{example}
+
+有了这个约定和基本工具，我们就可以好好感受一下 $\lambda$ 演算的强大了。
+
+\subsection{算术计算}
+想想自然数的定义，我们只要有一个 0，有一个一元的后继函数 $S$ 就可以了。
+事实上这就是皮亚诺算术公理的一部分。虽然 $\lambda$ 演算里，规约前规约
+后一切都是 $\lambda$ 项，没有什么数字，但仿照这个自然数定义，我们可以
+``模拟''自然数运算的，只用 $\beta$ 规约即可。
+
+我们定义
+\begin{align*}
+  \mathbf{ZERO} &= \lambda f.\lambda x.x \\
+  \mathbf{SUCC} &= \lambda n.\lambda f.\lambda x.f\,(n\,f\,x)\\
+  \mathbf{PLUS} &= \lambda m.\lambda n.m\,\mathbf{SUCC}\,n\\
+  \mathbf{MULT} &= \lambda m.\lambda n.\lambda f.m\,(n\,f)\\
+  \mathbf{POW}  &= \lambda b.\lambda e.e\,b\\
+  \mathbf{PRED} &= \lambda n.\lambda f.\lambda x.n\,(\lambda g.\lambda h.h\,(g\,f))\,(\lambda u.x)\,(\lambda u.u)\\
+  \mathbf{SUB}  &= \lambda m.\lambda n.n\,\mathbf{PRED}\,m
+\end{align*}
+
+如它们名字所暗示的那样，这些函数分别代表了 0、后继、加法、乘法、乘方、
+前趋以及减法函数。这到底什么意思我们还是在解释器里看个明白。先看看零以
+外的数字是什么样子的：
+\begin{verbcode}
+Lambda> ZERO = \f.\x.x
+Lambda> SUCC = \n.\f.\x.f (n f x)
+Lambda> SUCC ZERO
+\f.\x.f x
+Lambda> SUCC (SUCC ZERO)
+\f.\x.f (f x)
+Lambda> SUCC(SUCC (SUCC ZERO))
+\f.\x.f (f (f x))
+Lambda> SUCC(SUCC( SUCC (SUCC ZERO)))
+\f.\x.f (f (f (f x)))
+\end{verbcode}
+
+看出来了吗，有了零和后继函数，数字 $n$ 的定义就是
+$$
+\lambda f.\lambda x.\underbrace{f\,(f\dots(f\,x)\dots)}_{n\text{~重~}f}
+$$这种在 $\lambda$ 演算中编码自然数的方法最早是邱奇发明的，又称为邱奇
+数。下面就可以尽情的在解释器里验证前面那些定义的组合子确实如名字那样暗
+示了可以对邱奇数进行计算吧（读者可以自行输入上面的定义，也可以用解释器
+  已经预定义的如 \verb|plus| 这样小写的完全一样定义的组合子）。
+\begin{verbcode}
+Lambda> ONE = SUCC ZERO
+Lambda> TWO = SUCC ONE
+Lambda> THREE = SUCC TWO
+Lambda> FOUR = SUCC THREE
+Lambda> PLUS TWO THREE
+\f.\x.f (f (f (f (f x))))
+Lambda> POW TWO FOUR
+\x.\a.x (x (x (x (x (x (x (x (x (x (x (x (x (x (x (x a)))))))))))))))
+Lambda> MULT THREE TWO
+\f.\x.f (f (f (f (f (f x)))))
+Lambda> SUB FOUR TWO
+\f.\x.f (f x)
+Lambda> PRED ONE
+\f.\x.x
+\end{verbcode}
 \newpage
 \appendix
 %% \section{\texorpdfstring{$\lambda$ 演算解释器简要使用说明}{$Lambda 演算解释器简要使用说明}}
@@ -569,11 +673,11 @@ $\lambda$ 项是否有 $\beta$ 范式？非常不幸，答案是否定的：
 进入``原样输出''模式，命令 \verb|:set -hold| 则恢复立即执行的模式。
 
 \begin{verbcode}
-  Lambda> (\x.\y.y x) a b
-  b a
-  Lambda> :set +hold
-  Lambda> (\x.\y.y x) a b
-  (\x.\y.y x) a b
+Lambda> (\x.\y.y x) a b
+b a
+Lambda> :set +hold
+Lambda> (\x.\y.y x) a b
+(\x.\y.y x) a b
 \end{verbcode}
 
 解释器默认的输出样式采用了省略表示，去掉了不必要的括号，可以用命令
@@ -581,26 +685,26 @@ $\lambda$ 项是否有 $\beta$ 范式？非常不幸，答案是否定的：
 的结果。
 
 \begin{verbcode}
-  Lambda> (a b) c d e f g
-  a b c d e f g
-  Lambda> :set +fullform
-  Lambda> a b c d e f g
-  ((((((a b) c) d) e) f) g)
-  Lambda> \x.\y.y x a b
-  (\x.(\y.(((y x) a) b)))
+Lambda> (a b) c d e f g
+a b c d e f g
+Lambda> :set +fullform
+Lambda> a b c d e f g
+((((((a b) c) d) e) f) g)
+Lambda> \x.\y.y x a b
+(\x.(\y.(((y x) a) b)))
 \end{verbcode}
 
 解释器默认情况下，只输出最终的规约结果，可以用命令 \verb|:set +trace|
 和 \verb|:set -trace| 控制是否输出中间结果。
 
 \begin{verbcode}
-  Lambda> (\x.\y.y x) a b
-  b a
-  Lambda> :set +trace
-  Lambda> (\x.\y.y x) a b
-  ==> (\x.\y.y x) a b
-  ==> (\y.y a) b
-  ==> b a
+Lambda> (\x.\y.y x) a b
+b a
+Lambda> :set +trace
+Lambda> (\x.\y.y x) a b
+==> (\x.\y.y x) a b
+==> (\y.y a) b
+==> b a
 \end{verbcode}
 
 由于一个 $\lambda$ 项是否一定可以被 $\beta$ 规约规约到 $\beta$ 范式是
@@ -611,30 +715,30 @@ $\lambda$ 项是否有 $\beta$ 范式？非常不幸，答案是否定的：
 \verb|:reset settings| 来恢复默认设置。
 
 \begin{verbcode}
-  Lambda> (\x.\y.y y x) a b
-  b b a
-  Lambda> :set steps 0
-  Lambda> (\x.\y.y y x) a b
-  (\x.\y.y y x) a b seems can't be reduced!
-  Lambda> :reset settings
-  Lambda> (\x.\y.y y x) a b
-  b b a
+Lambda> (\x.\y.y y x) a b
+b b a
+Lambda> :set steps 0
+Lambda> (\x.\y.y y x) a b
+(\x.\y.y y x) a b seems can't be reduced!
+Lambda> :reset settings
+Lambda> (\x.\y.y y x) a b
+b b a
 \end{verbcode}
 
 解释器支持用户绑定名称到组合子，注意，只能是组合子，也就是没有自由变量
 的 $\lambda$ 项。组合子中可以出现已经绑定的名称，但不允许递归定义。已
 经绑定的名称不能再次绑定。
 \begin{verbcode}
-  Lambda> swap = \x.\y.y x
-  Lambda> swap a b
-  b a
-  Lambda> foo = swap \x.x
-  Lambda> foo \x.y
-  y
-  Lambda> id = id \x.x
-  id can't be recursively defined!
-  Lambda> foo = \x.x
-  foo has been defined already!
+Lambda> swap = \x.\y.y x
+Lambda> swap a b
+b a
+Lambda> foo = swap \x.x
+Lambda> foo \x.y
+y
+Lambda> id = id \x.x
+id can't be recursively defined!
+Lambda> foo = \x.x
+foo has been defined already!
 \end{verbcode}
 
 解释器已经默认绑定了一些这篇文章里出现的组合子，全部列表可见
@@ -642,22 +746,22 @@ $\lambda$ 项是否有 $\beta$ 范式？非常不幸，答案是否定的：
 \verb|:reset state| 来恢复默认的绑定，清空自定义的绑定。也可以用命令
 \verb|:clear state| 来清空全部的绑定。
 \begin{verbcode}
-  Lambda> plus
-  \m.m \n.\f.\x.f (n f x)
-  Lambda> plus four four
-  \f.\x.f (f (f (f (f (f (f (f x)))))))
-  Lambda> id = \x.x
-  Lambda> id a
-  a
-  Lambda> :reset state
-  Lambda> id a
-  id a
-  Lambda> :clear state
-  Lambda> plus four four
-  plus four four
-  Lambda> :reset state
-  Lambda> plus four four
-  \f.\x.f (f (f (f (f (f (f (f x)))))))
+Lambda> plus
+\m.m \n.\f.\x.f (n f x)
+Lambda> plus four four
+\f.\x.f (f (f (f (f (f (f (f x)))))))
+Lambda> id = \x.x
+Lambda> id a
+a
+Lambda> :reset state
+Lambda> id a
+id a
+Lambda> :clear state
+Lambda> plus four four
+plus four four
+Lambda> :reset state
+Lambda> plus four four
+\f.\x.f (f (f (f (f (f (f (f x)))))))
 \end{verbcode}
 
 以上就是用户在 $\lambda$ 演算解释器里可以做的全部设置了。要退出解释器，
@@ -666,26 +770,26 @@ $\lambda$ 项是否有 $\beta$ 范式？非常不幸，答案是否定的：
 \section{解释器默认绑定的组合子和名称}\label{sec:bindCombinator}
 其实就是依次运行如下命令后，解释器内部状态中绑定的组合子。
 \begin{verbcode}
-  zero   = \f.\x.x
-  succ   = \n.\f.\x.f (n f x)
-  plus   = \m.\n.m succ n
-  mult   = \m.\n.\f.m (n f)
-  pow    = \b.\e.e b
-  pred   = \n.\f.\x.n (\g.\h.h (g f)) (\u.x) (\u.u)
-  sub    = \m.\n.n pred m
-  one    = succ zero
-  two    = succ one
-  three  = succ two
-  four   = succ three
-  true   = \x.\y.x
-  false  = \x.\y.y
-  and    = \p.\q.p q p
-  or     = \p.\q.p p q
-  not    = \p.\a.\b.p b a
-  if     = \p.\a.\b.p a b
-  iszero = \n.n (\x.false) true
-  leq    = \m.\n.iszero (sub m n)
-  eq     = \m.\n. and (leq m n) (leq n m)
-  Y      = \g.(\x.g (x x)) (\x.g (x x))
+zero   = \f.\x.x
+succ   = \n.\f.\x.f (n f x)
+plus   = \m.\n.m succ n
+mult   = \m.\n.\f.m (n f)
+pow    = \b.\e.e b
+pred   = \n.\f.\x.n (\g.\h.h (g f)) (\u.x) (\u.u)
+sub    = \m.\n.n pred m
+one    = succ zero
+two    = succ one
+three  = succ two
+four   = succ three
+true   = \x.\y.x
+false  = \x.\y.y
+and    = \p.\q.p q p
+or     = \p.\q.p p q
+not    = \p.\a.\b.p b a
+if     = \p.\a.\b.p a b
+iszero = \n.n (\x.false) true
+leq    = \m.\n.iszero (sub m n)
+eq     = \m.\n. and (leq m n) (leq n m)
+Y      = \g.(\x.g (x x)) (\x.g (x x))
 \end{verbcode}
 \end{document}
