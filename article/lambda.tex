@@ -55,9 +55,10 @@
 \section*{缘起}
 
 ``写篇介绍 $\lambda$ 演算的文章''这一条目在我的待办事项列表里已经躺了
-很久了。我本科看``计算机程序的构造和解释''（SICP）一书时，接触到了
-$\lambda$ 表达式这个概念。当时我觉得它就是一种表示匿名函数的记法。有了
-这个记法，把函数作为值来传递、返回以及组合都方便了很多，别的也没多想。
+很久了。我本科看``计算机程序的构造和解释''（SICP）一书
+\cite{abelson1996structure}时，接触到了$\lambda$ 表达式这个概念。当时
+我觉得它就是一种表示匿名函数的记法。有了这个记法，把函数作为值来传递、
+返回以及组合都方便了很多，别的也没多想。
 
 SICP 里面用的 Scheme 语言让我见识到了世界上还有一类叫 ``函数式'' 的程
 序设计语言。搜索相关资料，都说 $\lambda$ 演算是函数式语言的基础。好奇
@@ -79,10 +80,12 @@ $\lambda$ 演算从可计算性理论到形式语义到类型理论，无处不�
 的相容性；1901 年提出的，动摇了集合论基础的罗素悖论还是个很流行的话题；
 至于哥德尔不完备性定理呢，大家都还不知道。所以在这之后的几十年很多数学
 家和逻辑学家都在致力于给整个数学建立一个一致的公理基础。比如罗素和怀特
-海德写了``数学原理''（Principia Mathematica）；比如约翰·冯·诺伊曼
+海德写了``数学原理''（Principia
+  Mathematica\cite{whitehead1927principia}）；比如约翰·冯·诺伊曼
 \footnote{对，你没有看错，他就是那个定下了计算机基本结构``冯·诺伊曼结
-  构''的那个冯·诺伊曼。}写了关于公理化集合论的博士论文；再比如阿隆佐·
-邱奇（Alonzo Church）提出了 $\lambda$ 演算。
+  构''的那个冯·诺伊曼。}写了关于公理化集合论的博士论文
+\cite{GlossarWiki:Neumann:1925}；再比如阿隆佐·邱奇（Alonzo Church）提
+出了 $\lambda$ 演算\cite{church1932set}。
 
 邱奇是个美国逻辑学家，生于 1903 年。他在 1928 年开始构造的一个形式系统
 中包含了纯 $\lambda$ 演算。他发明这一形式系统的初衷是为了给逻辑学提供一
@@ -104,8 +107,8 @@ $\lambda$ 演算从可计算性理论到形式语义到类型理论，无处不�
 不过二十世纪三十年代在 $\lambda$ 演算方面的成果差不多也就这些了，再接
 下来的 20 年都没有太多研究和进展。直到六十年代，那时有了计算机，有了程
 序设计语言，有了计算机科学家。在 1965 年，英国计算机科学家 Peter
-Landin 发现可以通过把复杂的程序语言转化成简单的$\lambda$ 演算，来理解
-程序语言的行为。这个洞见可以让我们把 $\lambda$演算本身看成一种程序设计
+Landin 发现可以通过把复杂的程序语言转化成简单的 $\lambda$ 演算，来理解
+程序语言的行为。这个洞见可以让我们把 $\lambda$ 演算本身看成一种程序设计
 语言。而众所周知的 John McCarthy 的 Lisp 语言，更是让 $\lambda$ 演算广
 为传播。现在不论是各种实际的程序设计语言还是理论上的研究工作，
 $\lambda$ 演算都是一个绕不过去的基本工具了。
@@ -116,8 +119,9 @@ $\lambda$ 演算之所以这么重要，用 Benjamin C. Pierce 的话说在于�
 打算从两个方面来讲，先讲它作为数学理论这方面的内容。
 
 \section{数学理论}
-让我们先从数学开始说起。函数是数学中一个非常基本的概念，我们很容易就能
-写出一个计算平方和的函数如下：
+这一节的内容主要参考了这本书\cite{hindley2008lambda}。让我们先从数学开
+始说起。函数是数学中一个非常基本的概念，我们很容易就能写出一个计算平方
+和的函数如下：
 \begin{equation}
   f(x,y) = x\times x + y\times y.
 \end{equation}
@@ -433,6 +437,7 @@ $f(6)=6+5=11$。替换是函数应用的实质啊。
 
 \newcommand{\betac}{\triangleright_{1\beta}}
 \newcommand{\betar}{\triangleright_\beta}
+\newcommand{\betae}{=_\beta}
 
 \begin{example}{\bfseries{（$\beta$ 缩减）}}\label{example:beta}
   \begin{alignat*}{2}
@@ -460,11 +465,11 @@ $f(6)=6+5=11$。替换是函数应用的实质啊。
 \end{definition}
 
 从示例 \ref{example:beta} 可以看出，并不是所有的 $\lambda$ 项都能
-$\beta$ 规约到 $\beta$ 范式。这其实还不是最让人担心的，有一个之前也许
-没注意到的问题：定义 \ref{def:betareduce} 里关于 $\beta$ 规约的定义非
-常``狡猾''，或者叫非常含糊，它只要求存在一个有限长的 $\beta$ 缩减链就
-行，当 $\lambda$ 项中含有不止一个 $\beta$ 可约式的时候，可以有不同顺序
-的缩减方式。
+$\beta$ 规约到 $\beta$ 范式。这其实还不是最让人担心的，有一个之前读者
+也许没注意到的问题：定义 \ref{def:betareduce} 里关于 $\beta$ 规约的定
+义非常``狡猾''，或者叫非常含糊，它只要求存在一个有限长的 $\beta$ 缩减
+链就行，当 $\lambda$ 项中含有不止一个 $\beta$ 可约式的时候，可以有不同
+顺序的缩减方式。
 
 \begin{example}\label{example:difforder}
   让我们重新看一下示例 \ref{example:beta} 里的 $(\lambda x.(\lambda
@@ -549,8 +554,10 @@ $\lambda$ 项是否有 $\beta$ 范式？非常不幸，答案是否定的：
 语言了。下面我将结合 $\lambda$ 演算解释器向读者展现这一点。
 
 \section{程序设计语言}
-前面为了能指称一般的 $\lambda$ 项引入了一些符号。本节中，需要指称具体的组合子，所以也做如下约定：
-\begin{notation}
+这一节的主要内容参考了维基百科\cite{wiki:lambda}。前面为了能指称一般的
+$\lambda$ 项引入了一些符号。本节中，需要指称具体的组合子，所以也做如下
+约定：
+\begin{notation}\label{notation:combinator}
   本文中，我们用粗体的大写字母及由它们组成的字符串代表具体的组合子，不
   同的粗体字母字符串如不做特殊说明，一般表示不同的组合子。当它们出现在
   $\lambda$ 项中时，视同对应的组合子整体出现在 $\lambda$ 项中。
@@ -635,7 +642,8 @@ $$
 $$这种在 $\lambda$ 演算中编码自然数的方法最早是邱奇发明的，又称为邱奇
 数。下面就可以尽情的在解释器里验证前面那些定义的组合子确实如名字那样暗
 示了可以对邱奇数进行计算吧（读者可以自行输入上面的定义，也可以用解释器
-  已经预定义的如 \verb|plus| 这样小写的完全一样定义的组合子）。
+  已经预定义的如 \verb|plus| 这样小写的组合子，详见附录
+  \ref{sec:bindCombinator}）。
 \begin{verbcode}
 Lambda> ONE = SUCC ZERO
 Lambda> TWO = SUCC ONE
@@ -652,6 +660,293 @@ Lambda> SUB FOUR TWO
 Lambda> PRED ONE
 \f.\x.x
 \end{verbcode}
+
+\subsection{逻辑与谓词}
+一门程序语言光能做数学计算是远远不够的，它还必须能够处理逻辑判断，也就
+是有分支语句。光有分支语句也不够，还得能处理``与或非'' 等逻辑连接词。
+当然，这一切的基础还在于你首先得有布尔值真和假。下面我将把定义直接在解
+释器里给出，并演示它的确实能处理布尔值和逻辑连接词：
+\begin{verbcode}
+Lambda> TRUE = \x.\y.x
+Lambda> FALSE = \x.\y.y
+Lambda> AND = \p.\q.p q p
+Lambda> OR = \p.\q.p p q
+Lambda> NOT = \p.\a.\b.p b a
+Lambda> IF = \p.\a.\b.p a b
+Lambda> AND TRUE FALSE
+\x.\y.y
+Lambda> AND TRUE TRUE
+\x.\y.x
+Lambda> OR TRUE FALSE
+\x.\y.x
+Lambda> NOT TRUE
+\a.\b.b
+Lambda> NOT (NOT TRUE)
+\a.\b.a
+Lambda> IF TRUE a b
+a
+Lambda> IF FALSE a b
+b
+Lambda> IF (OR FALSE FALSE) a b
+b
+\end{verbcode}
+
+更进一步的，可以结合前面的算术运算定义一些谓词：
+\begin{verbcode}
+Lambda> ISZERO = \n.n (\x.FALSE) TRUE
+Lambda> LEQ = \m.\n.ISZERO (SUB m n)
+Lambda> EQ = \m.\n. AND (LEQ m n) (LEQ n m)
+Lambda> ISZERO TWO
+\x.\y.y
+Lambda> ISZERO ZERO
+\x.\y.x
+Lambda> LEQ ONE ONE
+\x.\y.x
+Lambda> LEQ TWO ONE
+\x.\y.y
+Lambda> IF (EQ ONE TWO) a b
+b
+\end{verbcode}
+\verb|LEQ| 表示自然数之间的 $\leq$，\verb|EQ| 则表示自然数的等于。
+
+\subsection{函数与递归}
+从前面两个小节的例子可以看出，确实可以把抽象 $(\lambda\phi.M)$ 看成函
+数，把 $(M\,N)$ 函数调用，记住这两点的话，就可以定义一些简单的函数，多
+元函数就用柯里化解决。比如有了 $\mathbf{IF}$ 这个组合子，其实我们可以自行
+定义逻辑连接词。
+\begin{verbcode}
+Lambda> myNOT = \x.IF x FALSE TRUE
+Lambda> myAND = \x.\y.IF x y FALSE 
+Lambda> myOR = \x.\y.IF x TRUE y
+Lambda> myNOT(myNOT TRUE)
+\x.\y.x
+Lambda> myAND TRUE FALSE
+\x.\y.y
+Lambda> myAND TRUE TRUE
+\x.\y.x
+Lambda> myOR TRUE FALSE
+\x.\y.x
+\end{verbcode}
+
+组合子可以当作函数来用，说得更明白些，$\lambda\phi.M$ 中的 $\phi$ 就相
+当于参数，要是两个参数呢？那就定义形如 $\lambda\phi\psi.M$ 这样的组合
+子就行了。比如最大值和最小值函数可以这么定义：
+
+\begin{verbcode}
+Lambda> MAX = \m.\n.IF (LEQ m n) n m
+Lambda> MAX ONE TWO
+\f.\x.f (f x)
+Lambda> MAX FOUR TWO
+\f.\x.f (f (f (f x)))
+Lambda> MIN = \m.\n.IF (LEQ m n) m n
+Lambda> MIN TWO THREE
+\f.\x.f (f x)
+\end{verbcode}
+
+至此，把 $\lambda$ 演算当作一门程序设计语言已经初见雏形了：有算术运算，
+有布尔运算，有条件分支，是不是差个循环语句就 OK 了？不过实际上，对一门
+程序设计语言而言，循环语句不是必须的，如 Scheme 语言就没有循环这个语法。
+对一种程序设计语言来讲，只要能定义递归函数就行了，所有的循环都可以转换
+成递归函数，不过这是另外一个话题了，有兴趣的可以自己查找相关资料。
+
+还是举例子来说明简单些，比如我们要定义阶乘函数，它貌似很好定义：
+\begin{equation}\label{eqn:fact}
+\mathbf{FACT} = \lambda n.\mathbf{IF}\,(\mathbf{ISZERO}\,n)\,\mathbf{ONE}\,(\mathbf{MULT}\,n\,(\mathbf{FACT}\,(\mathbf{PRED}\,n)))  
+\end{equation}
+但这里有个问题，等号右边的那一堆定义里有 $\mathbf{FACT}$，它指向了这
+个定义自身。根据符号约定 \ref{notation:combinator}，等号的右边必须是个
+组合子，现在 $\mathbf{FACT}$ 是个待定义的东西，不是个 $\lambda$ 项。所
+以这个定义是非法的。符号约定 \ref{notation:combinator} 只是为了能够不
+用时时都写出完整的 $\lambda$ 项而给它起个名称，方便使用罢了，本身不是
+$\lambda$ 项演算里的东西，不能用来做递归定义。$\lambda\phi.M$ 能看成函
+数不假，但这个函数没有``名字''，是不可以在函数体 $M$ 里面自指的。解释
+器里也不行：
+\begin{verbcode}
+Lambda> FACT = \n.IF (ISZERO n) ONE (MULT ONE (FACT (PRED n)))
+FACT can't be recursively defined!
+\end{verbcode}
+
+乍看上去，似乎就没办法在 $\lambda$ 演算里面定义阶乘，定义递归函数了，
+不允许自指那还怎么定义递归？让人惊叹不已的地方就在这里了，看看下面这个
+定义：
+\begin{verbcode}
+Lambda> FACT1 = \f.\n.IF (ISZERO n) ONE (MULT n (f f (PRED n)))
+Lambda> FACT = FACT1 FACT1
+Lambda> FACT THREE
+\f.\x.f (f (f (f (f (f x)))))
+Lambda> FACT FOUR
+\f.\x.f (f (f (f (f (f (f (f (f (f (f (f (f (f (f (f (f (f (f (f (f (f
+(f (f x)))))))))))))))))))))))
+\end{verbcode}
+
+数数看上面结果里的 \verb|f| 是不是分别作用了 6 层和 24 层，确实是 $3!$
+和 $4!$，我们真的定义出了阶乘函数。这是怎么做到的呢？仔细看看
+\verb|FACT1| 的定义，它和之前 (\ref{eqn:fact}) 的定义区别在于多了一个
+参数 \verb|f|，并用 \verb|f f| 代替了递归自指的 $\mathbf{FACT}$。而在
+\verb|FACT| 的定义中，我们将 \verb|FACT1| 作用于自身。这样规约的时候
+\verb|f f x| 就是 \verb|FACT1 FACT1 x| 就是 \verb|FACT x|。没有自指，
+通过两重应用这个技巧，就可以定义递归函数。进一步的，也不需要把
+\verb|FACT1| 写两遍，可以定义一个组合子 $\mathbf{W}=\lambda x.x\,x$。
+这样可以更简单的定义阶乘如下：
+\begin{verbcode}
+Lambda> W = \x.x x
+Lambda> FACTD = W (\f.\n.IF (ISZERO n) ONE (MULT n (f f (PRED n))))
+Lambda> FACTD THREE
+\f.\x.f (f (f (f (f (f x)))))
+\end{verbcode}
+
+两重应用这个技巧是普适的，可以用来定义一般的递归函数。比如我们重新定义一下加法函数：
+\begin{verbcode}
+Lambda> ADD = W (\f.\n.\m.IF (ISZERO m) n (f f (SUCC n) (PRED m)))
+Lambda> ADD TWO FOUR
+\f.\x.f (f (f (f (f (f x)))))
+Lambda> ADD FOUR FOUR
+\f.\x.f (f (f (f (f (f (f (f x)))))))
+\end{verbcode}
+
+到了这一步，一般人如我，就觉得 $\lambda$ 演算定义递归函数已经完美解决，
+天下太平。但当年的逻辑学家们，计算机科学家们不是这么想的，他们觉得两重
+作用 \verb|f f| 直接写在函数体里面，明明白白告诉别人我要自指，还是不够
+通用。能不能找到一个更加一般解决办法，在函数体里面连两重应用都不用，只
+用一重，照样能定义递归函数呢？答案是能，他们找到了不动点组合子。
+
+在我写的解释器里，已经预定义了一个不动点组合子 $\mathbf{Y}$，我们可以
+看看它是什么样子的：
+\begin{verbcode}
+Lambda> :set +hold
+Lambda> Y
+\g.(\x.g (x x)) \x.g (x x)
+Lambda> :set -hold
+Lambda> Y
+Y seems can't be reduced!
+\end{verbcode}
+可一看到前面命令 \verb|:set +hold| 使解释器不自动进行规约是有道理的：
+$\mathbf{Y}$ 没有 $\beta$ 范式。为什么叫 $\mathbf{Y}$ 不动点组合子呢，
+组合子好理解，不动点从何说起呢？这其实是个数学概念
+\begin{definition}{\bfseries{（不动点）}}
+  对函数 $f$ 而言，我们称 $x$ 是 $f$ 的不动点，当且仅当 $x$ 满足
+$$
+  f(x)=x.
+$$
+\end{definition}
+既然 $\lambda$ 项中的抽象 $\lambda\phi.M$ 可以看作函数，自然也可以问问
+什么样的函数有不动点。不过我们到目前为止，只有 $\beta$ 规约，还没有定
+义除了语法相等之外的``等于''是什么意思。$\beta$ 规约下的等于定义是十分
+自然的：
+\begin{definition}{\bfseries{（$\beta$ 等于）}}
+  我们说 $P$ 是 $\beta$ 等于 $Q$，当且仅当 $P$ 可以在有限步（包括零步）
+  内经过 $\beta$ 缩减或者反 $\beta$ 缩减或者 $\alpha$ 变换得到 $Q$。也
+  即 $P\betae Q$ 当且仅当存在 $P_0,P_1\dots P_n\:(n\geq 0)$，其中
+  $P_0\equiv P$，$P_n\equiv Q$ 并满足
+$$
+(\forall i\leq n-1)\;(P_i\betac P_{i+1}\quad\text{或}\quad P_{i+1}\betac P_i\quad\text{或}\quad P_i\equiv_\alpha P_{i+1})
+$$
+
+\end{definition}
+然后我们就可以回答 $\lambda$ 演算中的不动点问题了：在 $\lambda$ 演算中，
+把 $\mathbf{Y}$ 应用于任意 $F$，即 $\mathbf{Y}\,F$ 就是 $F$ 的不动点
+\begin{equation*}
+  \begin{split}
+    &\mathbf{Y}\,F\\
+    \equiv\; & (\lambda g.(\lambda x.g\,(x\,x))\,\lambda x.g\,(x\,x))\,F\\
+    \betae\;& (\lambda x.F\,(x\,x))\,\lambda x.F\,(x\,x)\\
+    \betae\;& F\,((\lambda x.F\,(x\,x))\,\lambda x.F\,(x\,x))\\
+    \betae\;& F\,(\mathbf{Y}\,F)
+  \end{split}
+\end{equation*}
+
+解释了关于不动点组合子的疑问，我们可以言归正传，看它如何解决不用两重应用就定义递归函数的问题：
+\begin{verbcode}
+Lambda> FACT2 = \f.\n.IF (ISZERO n) ONE (MULT n (f (PRED n)))
+Lambda> FACTY = Y FACT2
+Lambda> FACTY THREE
+\f.\x.f (f (f (f (f (f x)))))
+Lambda> FACTY FOUR
+\f.\x.f (f (f (f (f (f (f (f (f (f (f (f (f (f (f (f (f (f (f (f (f (f
+(f (f x)))))))))))))))))))))))
+\end{verbcode}
+
+很神奇吧？这是什么原理呢？牢牢记住前面证明不动点时的那个等式，然后就可以逐步推断：
+$\mathbf{Y}\,F\betae F\,(\mathbf{Y}\,F)$。所以 
+\begin{equation*}
+  \begin{split}
+      &\mathbf{FACT}\,\mathbf{THREE}\\
+    \betae\;& \mathbf{Y}\,\mathbf{FACT2}\,\mathbf{THREE}\qquad\text{（由定义）}\\
+    \betae\;& \mathbf{FACT2}\,(\mathbf{Y}\,\mathbf{FACT2})\,\mathbf{THREE}\qquad\text{（因为~}\mathbf{Y}\,F\betae F\,(\mathbf{Y}\,F)\text{）}\\
+    \betae\;& \mathbf{IF}\,(\mathbf{ISZERO}\,\mathbf{THREE})\,\mathbf{ONE}\,(\mathbf{MULT}\,\mathbf{THREE}\,(\mathbf{Y}\,\mathbf{FACT2}\,\mathbf{TWO}))\\
+    \betae\;& \mathbf{MULT}\,\mathbf{THREE}\,(\mathbf{Y}\,\mathbf{FACT2}\,\mathbf{TWO})
+  \end{split}
+\end{equation*}
+这样 $\mathbf{Y}\,\mathbf{FACT2}$ 再次出现，但面对的参数已经被减去了 1，
+依次类推，可见确实定义了阶乘函数而 $\mathbf{FACT2}$ 也没有两重应用。
+
+也不要以为不动点组合子只有一个，事实上有很多很多，比如图灵就发明过一个图灵不动点组合子，定义如下：
+$$
+\mathbf{T} = (\lambda x.\lambda y.y\,(x\,x\,y))\,\lambda x.\lambda y.y\,(x\,x\,y)
+$$
+它和 $\mathbf{Y}$ 组合子一样可以用来定义递归函数，有解释器为证：
+\begin{verbcode}
+Lambda> T = (\x.\y.y (x x y)) \x.\y.y (x x y)
+Lambda> FACTT = T FACT2
+Lambda> FACTT FOUR
+\f.\x.f (f (f (f (f (f (f (f (f (f (f (f (f (f (f (f (f (f (f (f (f (f
+(f (f x)))))))))))))))))))))))
+\end{verbcode}
+
+\subsection{数据结构}
+我相信前面已经展示了 $\lambda$ 演算可以作为程序语言的很多功能，已经很
+完备了，但美中还有不足。作为控制结构来讲，有分支有函数有递归，已经足够
+了。但数据类型还是不够丰富：只有正整数类型和布尔类型。学过 Lisp 的读者
+应该清楚，只要程序语言能够定义有序对 \verb|(a,b)| 这样的，那基本的数据
+结构列表也好，树也罢都可以用有序对来构造。在 $\lambda$ 演算里，这也不
+是问题：
+\begin{verbcode}
+Lambda> CONS = \x.\y.\f. f x y
+Lambda> CAR = \p.p TRUE
+Lambda> CDR = \p.p FALSE
+Lambda> NIL = \x. TRUE
+Lambda> NULL = \p.p (\x.\y.FALSE)
+\end{verbcode}
+这里面 \verb|CONS| 是构造有序对的，\verb|CAR| 是取有序对的头，
+\verb|CDR| 是取有序头以外的尾，\verb|NIL| 表示一个空的有序对，而
+\verb|NULL| 是谓词，用于判断一个有序对是否为空。可以验证这些基本定义的
+语义没有问题：
+\begin{verbcode}
+Lambda> CONS a (CONS b (CONS c NIL))
+\f.f a \f.f b \f.f c \x.\x.\y.x
+Lambda> CAR (CONS a (CONS b (CONS c NIL)))
+a
+Lambda> CDR (CONS a (CONS b (CONS c NIL)))
+\f.f b \f.f c \x.\x.\y.x
+Lambda> CAR (CDR (CONS a (CONS b (CONS c NIL))))
+b
+Lambda> NULL (CDR (CONS a (CONS b (CONS c NIL))))
+\x.\y.y
+Lambda> NULL NIL
+\x.\y.x
+\end{verbcode}
+可以看到连续的应用 \verb|CONS| 可以得到列表。我们甚至可以定义长度函数：
+\begin{verbcode}
+Lambda> LENGTH = Y (\g.\c.\x. NULL x c (g (SUCC c) (CDR x))) ZERO
+Lambda> LENGTH NIL
+\f.\x.x
+Lambda> LENGTH (CONS a (CONS b (CONS c NIL)))
+\f.\x.f (f (f x))
+Lambda> LENGTH (CONS a (CONS b (CONS c (CONS d NIL))))
+\f.\x.f (f (f (f x)))
+\end{verbcode}
+
+用 $\lambda$ 演算可以定义的更多的东西，比如除法，有兴趣的读者可以自己
+用关键词``lambda calculus division''搜索看看，网上相关的资料汗牛充栋。
+
+通过这一系列的演示可以看到，虽然可定义的东西如此之多，从基本数据类型到
+复合的数据结构，从分支判断到递归函数。他们表面看上去千差万别，但实际上
+都是 $\lambda$ 项，都可以用 $\beta$ 规约计算，都可以得到同为 $\lambda$
+项的结果。$\lambda$ 项的定义很简单，$\beta$ 规约直观理解起来也不复杂。
+从如此简单的定义出发，可以得到如此丰富、美妙，不可思议的结果。我觉得这
+就是 $\lambda$ 演算被认为是程序语言，特别是函数式程序设计语言基石的原
+因：所有的语义都可以用 $\lambda$ 演算来解释，一切皆 $\lambda$！
+
 \newpage
 \appendix
 %% \section{\texorpdfstring{$\lambda$ 演算解释器简要使用说明}{$Lambda 演算解释器简要使用说明}}
@@ -792,4 +1087,7 @@ leq    = \m.\n.iszero (sub m n)
 eq     = \m.\n. and (leq m n) (leq n m)
 Y      = \g.(\x.g (x x)) (\x.g (x x))
 \end{verbcode}
+
+\bibliographystyle{unsrt}
+\bibliography{lambda}
 \end{document}
