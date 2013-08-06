@@ -148,9 +148,7 @@ stdDefinition = ["zero   = \\f.\\x.x",
                  "leq    = \\m.\\n.iszero (sub m n)",
                  "eq     = \\m.\\n. and (leq m n) (leq n m)",
 
-                 "Yv     = \\h. (\\x.\\a.h (x x) a) (\\x.\\a.h (x x) a)",
-                 "Y      = \\g.(\\x.g (x x)) (\\x.g (x x))",
-                 "fracG  = \\r.\\n.if (iszero n) one (mult n (r (pred n)))"
+                 "Y      = \\g.(\\x.g (x x)) (\\x.g (x x))"
                  ]
 
 stdState :: CalculusState
