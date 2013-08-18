@@ -448,8 +448,9 @@ $f(6)=6+5=11$。替换是函数应用的实质啊。
     (\lambda x.x\,x)\,(\lambda x.x\,x)\quad &\betac\quad [(\lambda x.x\,x)/x]\,(x\,x) & &\equiv\quad (\lambda x.x\,x)\,(\lambda x.x\,x)\\
     &\betac\quad [(\lambda x.x\,x)/x]\,(x\,x) & &\equiv\quad (\lambda x.x\,x)\,(\lambda x.x\,x)\\
     &\cdots\quad \text{etc.}\\
-    (\lambda x.x\,x\,y)\,(\lambda x.x\,x\,y)\quad &\betac\quad (\lambda x.x\,x\,y)y\\
-    &\betac\quad (\lambda x.x\,x\,y)yy \\
+    (\lambda x.x\,x\,y)\,(\lambda x.x\,x\,y)\quad 
+    &\betac\quad (\lambda x.x\,x\,y)\,(\lambda x.x\,x\,y)\,y\\
+    &\betac\quad (\lambda x.x\,x\,y)\,(\lambda x.x\,x\,y)\,y\,y \\
     &\cdots\quad \text{etc.} \\
   \end{alignat*}
 \end{example}
