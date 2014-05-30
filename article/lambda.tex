@@ -763,7 +763,7 @@ $\lambda$ 项演算里的东西，不能用来做递归定义。$\lambda\phi.M$ 
 数不假，但这个函数没有``名字''，是不可以在函数体 $M$ 里面自指的。解释
 器里也不行：
 \begin{verbcode}
-Lambda> FACT = \n.IF (ISZERO n) ONE (MULT ONE (FACT (PRED n)))
+Lambda> FACT = \n.IF (ISZERO n) ONE (MULT n (FACT (PRED n)))
 FACT can't be recursively defined!
 \end{verbcode}
 
